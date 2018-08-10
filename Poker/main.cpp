@@ -25,6 +25,7 @@ enum actions
 const int suits_count = 4;
 const int ranks_count = 13;
 const int sleep_time = 2;
+const int player_index = 4;
 
 std::string suits[suits_count];
 std::string ranks[ranks_count];
@@ -164,7 +165,7 @@ public:
 		players[1].name = "Tristan";
 		players[2].name = "Michal";
 		players[3].name = "Edyta";
-		players[4].name = name;
+		players[player_index].name = name;
 		players[5].name = "Kamil";
 
 		startGame();
@@ -227,17 +228,17 @@ public:
 		cout << "   \\                               /" << endl;
 		cout << "    \\_" << ((bind == 5) ? "@" : "_") << "_____________" << ((bind == 4) ? "@" : "_") << "___________" << ((bind == 3) ? "@" : "_") << "_/" << endl;
 		cout << endl;
-		cout << "  " << ((players[5].playing) ? (players[5].name) : "      ") << "          " << ((players[4].playing) ? (players[4].name) : "      ") << "         "
+		cout << "  " << ((players[5].playing) ? (players[5].name) : "      ") << "          " << ((players[player_index].playing) ? (players[player_index].name) : "      ") << "         "
 			<< ((players[3].playing) ? (players[3].name) : "    ") << endl;
-		cout << "   $" << setw(4) << ((players[5].playing) ? (players[5].money) : 0) << "          $" << setw(4) << ((players[4].playing) ? (players[4].money) : 0)
+		cout << "   $" << setw(4) << ((players[5].playing) ? (players[5].money) : 0) << "          $" << setw(4) << ((players[player_index].playing) ? (players[player_index].money) : 0)
 			<< "         $" << setw(4) << ((players[3].playing) ? (players[3].money) : 0) << endl;
 		cout << endl;
-		if (players[4].round)
+		if (players[player_index].round)
 		{
 			cout << "   Your hand:" << endl;
 			cout << "    ___    ___" << endl;
-			cout << "   | " << ranks[players[4].cards[0].rank] << " |  | " << ranks[players[4].cards[1].rank] << " |" << endl;
-			cout << "   | " << suits[players[4].cards[0].suit] << " |  | " << suits[players[4].cards[1].suit] << " |" << endl;
+			cout << "   | " << ranks[players[player_index].cards[0].rank] << " |  | " << ranks[players[player_index].cards[1].rank] << " |" << endl;
+			cout << "   | " << suits[players[player_index].cards[0].suit] << " |  | " << suits[players[player_index].cards[1].suit] << " |" << endl;
 			cout << "   |___|  |___|" << endl << endl;
 		}
 
@@ -309,7 +310,7 @@ private:
 		for (int k = bind + 1; k < bind + 7; k++)
 		{
 			/* human player actions */
-			if (k % players_count == 4 && players[4].round)
+			if (k % players_count == 4 && players[player_index].round)
 			{
 				if (betOn)
 				{
@@ -327,7 +328,7 @@ private:
 
 					int actionRange = BET_or_CALL;
 
-					if(players[4].money > 0)
+					if(players[player_index].money > 0)
 						cout << "\t\t\t\t\tYour action: (1) FLOP (2) CHECK (3) BET/CALL ";						
 					else
 					{
@@ -338,7 +339,7 @@ private:
 					while (action < FLOP|| action > actionRange )
 					{
 						cout << "Invalid number pressed." << endl;
-						if(players[4].money > 0)
+						if(players[player_index].money > 0)
 							cout << "\t\t\t\t\tYour action: (1) FLOP (2) CHECK (3) BET/CALL ";						
 						else
 							cout << "\t\t\t\t\tYour action: (1) FLOP (2) CHECK ";
@@ -351,12 +352,12 @@ private:
 
 				if (action == FLOP)
 				{
-					players[4].round = 0;
-					cout << "\t- " << players[4].name << " flops...\n";
+					players[player_index].round = 0;
+					cout << "\t- " << players[player_index].name << " flops...\n";
 				}
 				else if (action == CHECK)
 				{
-					cout << "\t+ " << players[4].name << " checks.\n";
+					cout << "\t+ " << players[player_index].name << " checks.\n";
 					continue;
 				}
 				else
@@ -364,15 +365,15 @@ private:
 					if (betOn)
 					{
 						pot += betOn;
-						players[4].money -= betOn;
-						players[4].goodToGo = 1;
-						cout << "\t+ " << players[4].name << " bets " << betOn << "$\n";
+						players[player_index].money -= betOn;
+						players[player_index].goodToGo = 1;
+						cout << "\t+ " << players[player_index].name << " bets " << betOn << "$\n";
 					}
 					else
 					{
 						cout << "How much do you want to bet: ";
 						cin >> bet;
-						while (bet > players[4].money || bet < 1)
+						while (bet > players[player_index].money || bet < 1)
 						{
 							cout << "Invalid number to bet." << endl;
 							cout << "How much do you want to bet: ";
@@ -380,11 +381,11 @@ private:
 							cout << endl << endl;
 						}
 						pot += bet;
-						players[4].money -= bet;
+						players[player_index].money -= bet;
 						betOn = bet;
-						players[4].goodToGo = 1;
+						players[player_index].goodToGo = 1;
 
-						cout << "\t+ " << players[4].name << " bets " << bet << "$\n";
+						cout << "\t+ " << players[player_index].name << " bets " << bet << "$\n";
 					}
 				}
 			}
@@ -444,7 +445,7 @@ private:
 			{
 				if (k % players_count == 4)
 				{
-					if (players[4].round && players[4].goodToGo == 0)
+					if (players[player_index].round && players[player_index].goodToGo == 0)
 					{
 						cout << "\t\t\t\t\tYour action: (1) FLOP (3) BET/CALL ";
 						cin >> action;
@@ -457,16 +458,16 @@ private:
 						}
 						if (action == FLOP)
 						{
-							cout << "\t- " << players[4].name << " flops...\n";
-							players[4].round = 0;
+							cout << "\t- " << players[player_index].name << " flops...\n";
+							players[player_index].round = 0;
 						}
 						else
 						{
 							pot += betOn;
-							players[4].money -= betOn;
-							players[4].goodToGo = 1;
+							players[player_index].money -= betOn;
+							players[player_index].goodToGo = 1;
 
-							cout << "\t+ " << players[4].name << " bets " << betOn << "$\n";
+							cout << "\t+ " << players[player_index].name << " bets " << betOn << "$\n";
 						}
 					}
 				}
@@ -731,7 +732,7 @@ private:
 			}
 
 			/* checking for game over*/
-			if (players[4].playing == 0)
+			if (players[player_index].playing == 0)
 			{
 				std::cout << "You are out of money, sorry." << std::endl;
 				std::cout << "Game over." << std::endl;
