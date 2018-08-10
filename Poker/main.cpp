@@ -216,7 +216,7 @@ public:
 		cout << "   $" << setw(4) << ((players[0].playing) ? (players[0].money) : 0) << "         $" << setw(4) << ((players[1].playing) ? (players[1].money) : 0)
 			<< "           $" << setw(4) << ((players[2].playing) ? (players[2].money) : 0) << endl;
 		cout << "     _____________________________" << endl;
-		cout << "    / " << ((bind == 0) ? "@" : " ") << "            " << ((bind == 1) ? "@" : " ") << "            " << ((bind == 2) ? "@" : " ") << " \\" << endl;
+		cout << "    / " << ((blind == 0) ? "@" : " ") << "            " << ((blind == 1) ? "@" : " ") << "            " << ((blind == 2) ? "@" : " ") << " \\" << endl;
 		cout << "   /  ___   ___   ___   ___   ___  \\" << endl;
 		cout << "   | | " << ((tableCards[0].rank) >= 0 ? ranks[tableCards[0].rank] : " ") << " | | " << ((tableCards[1].rank) >= 0 ? ranks[tableCards[1].rank] : " ") << " | | " << ((tableCards[2].rank) >= 0 ? ranks[tableCards[2].rank] : " ") << " | | "
 			<< ((tableCards[3].rank) >= 0 ? ranks[tableCards[3].rank] : " ") << " | | " << ((tableCards[4].rank) >= 0 ? ranks[tableCards[4].rank] : " ") << " | |" << endl;
@@ -226,7 +226,7 @@ public:
 		cout << "   |                               |" << endl;
 		cout << "   |	       Pot = $" << setw(4) << pot << "         |" << endl;
 		cout << "   \\                               /" << endl;
-		cout << "    \\_" << ((bind == 5) ? "@" : "_") << "_____________" << ((bind == 4) ? "@" : "_") << "___________" << ((bind == 3) ? "@" : "_") << "_/" << endl;
+		cout << "    \\_" << ((blind == 5) ? "@" : "_") << "_____________" << ((blind == 4) ? "@" : "_") << "___________" << ((blind == 3) ? "@" : "_") << "_/" << endl;
 		cout << endl;
 		cout << "  " << ((players[5].playing) ? (players[5].name) : "      ") << "          " << ((players[player_index].playing) ? (players[player_index].name) : "      ") << "         "
 			<< ((players[3].playing) ? (players[3].name) : "    ") << endl;
@@ -249,7 +249,7 @@ private:
 	static const int players_count = 6;
 	Player players[players_count];
 	Deck deck1;
-	int bind;
+	int blind;
 	Card tableCards[5];
 	int pot, action, bet, rational, betOn, winner, maxPoints, roundWinner;
 	int handPoints[6];
@@ -307,7 +307,7 @@ private:
 		for (int k = 0; k < players_count; k++)
 			players[k].goodToGo = 0;
 
-		for (int k = bind + 1; k < bind + 7; k++)
+		for (int k = blind + 1; k < blind + 7; k++)
 		{
 			/* human player actions */
 			if (k % players_count == 4 && players[player_index].round)
@@ -410,7 +410,7 @@ private:
 					players[k % players_count].round = 0;
 					cout << "\t- " << players[k % players_count].name << " flops..." << endl;
 				}
-				else if (action == FLOP && betOn == 0)
+				else if (action == CHECK && betOn == 0)
 				{
 					cout << "\t+ " << players[k % players_count].name << " checks." << endl;
 					continue;
@@ -441,7 +441,7 @@ private:
 
 		if (betOn && playersToBet())
 		{
-			for (int k = bind + 1; k < bind + 7; k++)
+			for (int k = blind + 1; k < blind + 7; k++)
 			{
 				if (k % players_count == 4)
 				{
@@ -707,6 +707,7 @@ private:
 	void startGame()
 	{
 		int i = 0;
+		int player_paying_blind = 0;
 
 		while (playersLeft() > 1)
 		{
@@ -739,14 +740,15 @@ private:
 				break;
 			}
 
-			bind = i % players_count;
+			blind = i % players_count;
+			player_paying_blind = (blind + 1) % players_count;
 
-			/* paying bind */
+			/* paying blind */
 			pot = 20;
-			if (players[bind].money >= 20)
-				players[bind].money -= 20;
+			if (players[player_paying_blind].money >= 20)
+				players[player_paying_blind].money -= 20;
 			else
-				players[bind].playing = 0;
+				players[player_paying_blind].playing = 0;
 
 			std::cout << "\n\n\n";
 			std::cout << "\t\t\t\t\t ------ ROUND " << i + 1 << " ------\n\n\n";
