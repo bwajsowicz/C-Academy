@@ -31,5 +31,6 @@ void test_cases()
 int main(int argc, char *argv[])
 {
 	test_cases();
+Y
 	return 0;
 }
