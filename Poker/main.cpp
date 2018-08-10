@@ -668,26 +668,37 @@ private:
 		}
 	} /*end of evaluateHands() */
 
-	void printWinningHand(int winner)
+	void printAllHands(int winner)
 	{
 		using std::cout;
 		using std::endl;
 
-		Card winningHand[5];
-		for (int i = 0; i < 3; i++)
-			winningHand[i] = tableCards[bestHand[winner][i]];
+		Card cards[5];
 
-		for (int i = 0; i < 2; i++)
-			winningHand[i + 3] = players[winner].cards[i];
+		for(int i = 0; i < 3; i++)
+			cards[i+2] = tableCards[bestHand[winner][i]];
 
-		qsort(winningHand, 5, sizeof(Card), compareCards);
+		for(int i = 0; i < players_count; i++)
+		{
+			if(players[i].playing)
+			{
+				for(int j = 0; j < 2; j++)
+				cards[j] = players[i].cards[j];
 
-		cout << "   The winning hand:" << endl;
-		cout << "   ___   ___   ___   ___   ___" << endl;
-		cout << "  | " << ranks[winningHand[0].rank] << " | | " << ranks[winningHand[1].rank] << " | | " << ranks[winningHand[2].rank] << " | | " << ranks[winningHand[3].rank] << " | | " << ranks[winningHand[4].rank] << " |" << endl;
-		cout << "  | " << suits[winningHand[0].suit] << " | | " << suits[winningHand[1].suit] << " | | " << suits[winningHand[2].suit] << " | | " << suits[winningHand[3].suit] << " | | " << suits[winningHand[4].suit] << " |" << endl;
-		cout << "  |___| |___| |___| |___| |___|" << endl;
-		cout << endl << endl;
+				qsort(cards, 5, sizeof(Card), compareCards);
+	
+				if(i == winner)
+					cout << "[WINNER] " << players[i].name << "'s " << " hand:" << endl;
+				else	
+					cout << players[i].name << "'s " << " hand:" << endl;
+				cout << "   ___   ___   ___   ___   ___" << endl;
+				cout << "  | " << ranks[cards[0].rank] << " | | " << ranks[cards[1].rank] << " | | " << ranks[cards[2].rank] << " | | " << ranks[cards[3].rank] << " | | " << ranks[cards[4].rank] << " |" << endl;
+				cout << "  | " << suits[cards[0].suit] << " | | " << suits[cards[1].suit] << " | | " << suits[cards[2].suit] << " | | " << suits[cards[3].suit] << " | | " << suits[cards[4].suit] << " |" << endl;
+				cout << "  |___| |___| |___| |___| |___|" << endl;
+				cout << endl << endl;
+			}
+		}
+
 		_sleep(3);
 	}
 
@@ -736,7 +747,7 @@ private:
 			else
 				players[bind].playing = 0;
 
-			std::cout << "\n\n\n\n\n\n\n";
+			std::cout << "\n\n\n";
 			std::cout << "\t\t\t\t\t ------ ROUND " << i + 1 << " ------\n\n\n";
 			_sleep(1000);
 			deck1.shuffle();
@@ -750,6 +761,7 @@ private:
 			{
 				winner = getWinner();
 				std::cout << players[winner].name << " wins $" << pot << "\n\n";
+				printAllHands(winner);
 				i++;
 				continue;
 			}
@@ -764,6 +776,7 @@ private:
 			{
 				winner = getWinner();
 				std::cout << players[winner].name << " wins $" << pot << "\n\n";
+				printAllHands(winner);
 				i++;
 				continue;
 			}
@@ -778,6 +791,7 @@ private:
 			{
 				winner = getWinner();
 				std::cout << players[winner].name << " wins $" << pot << "\n\n";
+				printAllHands(winner);
 				i++;
 				continue;
 			}
@@ -826,7 +840,8 @@ private:
 				std::cout << "STRAIGHT FLUSH";
 			std::cout << "\n\n";
 
-			printWinningHand(roundWinner);
+			//printWinningHand(roundWinner);
+			printAllHands(roundWinner);
 
 			players[roundWinner].money += pot;
 
