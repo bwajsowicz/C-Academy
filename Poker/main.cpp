@@ -17,7 +17,6 @@
 
 enum actions
 {
-	NO_ACTION = 0,
 	FLOP = 1,
 	CHECK = 2,
 	BET_or_CALL= 3
@@ -325,12 +324,25 @@ private:
 				}
 				else
 				{
-					cout << "\t\t\t\t\tYour action: (1) FLOP (2) CHECK (3) BET/CALL ";
+
+					int actionRange = BET_or_CALL;
+
+					if(players[4].money > 0)
+						cout << "\t\t\t\t\tYour action: (1) FLOP (2) CHECK (3) BET/CALL ";						
+					else
+					{
+						cout << "\t\t\t\t\tYour action: (1) FLOP (2) CHECK ";
+						actionRange = CHECK;
+					}
 					cin >> action;
-					while (action < FLOP|| action > BET_or_CALL)
+					while (action < FLOP|| action > actionRange )
 					{
 						cout << "Invalid number pressed." << endl;
-						cout << "\t\t\t\t\tYour action: (1) FLOP (2) CHECK (3) BET/CALL ";
+						if(players[4].money > 0)
+							cout << "\t\t\t\t\tYour action: (1) FLOP (2) CHECK (3) BET/CALL ";						
+						else
+							cout << "\t\t\t\t\tYour action: (1) FLOP (2) CHECK ";
+
 						cin >> action;
 					}
 				}
@@ -390,9 +402,9 @@ private:
 				}
 				else
 				{
-					action = rand() % 3;
+					action = rand() % 3 + 1;
 				}
-				if (action == NO_ACTION)
+				if (action == FLOP)
 				{
 					players[k % players_count].round = 0;
 					cout << "\t- " << players[k % players_count].name << " flops..." << endl;
@@ -464,7 +476,7 @@ private:
 					if (players[k % players_count].round == 0 || players[k % players_count].goodToGo == 1)
 						continue;
 					action = rand() % 2;
-					if (action == NO_ACTION)
+					if (action == 0)
 					{
 						players[k % players_count].round = 0;
 						cout << "\t- " << players[k % players_count].name << " flops..." << endl;
