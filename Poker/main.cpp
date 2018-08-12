@@ -788,6 +788,7 @@ private:
 			if (oneLeft())
 			{
 				winner = getWinner();
+				players[winner].money += pot;
 				std::cout << players[winner].name << " wins $" << pot << "\n\n";
 				printAllHands(winner);
 				i++;
@@ -803,6 +804,7 @@ private:
 			if (oneLeft())
 			{
 				winner = getWinner();
+				players[winner].money += pot;
 				std::cout << players[winner].name << " wins $" << pot << "\n\n";
 				printAllHands(winner);
 				i++;
@@ -818,6 +820,7 @@ private:
 			if (oneLeft())
 			{
 				winner = getWinner();
+				players[winner].money += pot;
 				std::cout << players[winner].name << " wins $" << pot << "\n\n";
 				printAllHands(winner);
 				i++;
