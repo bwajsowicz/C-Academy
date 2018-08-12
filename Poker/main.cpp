@@ -451,7 +451,7 @@ private:
 					}
 					else
 					{
-						bet = (rand() % (players[k % players_count].money / 3) + 10);
+						bet = (rand() % players[k % players_count].money - 1 + 1);
 						pot += bet;
 						players[k % players_count].money -= bet;
 						cout << '\a';
