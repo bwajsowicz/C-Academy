@@ -157,9 +157,11 @@ public:
 	{
 		for (int i = 0; i < players_count; i++)
 		{
-			players[i].money = 1000;
+			players[i].money = 100;
 			players[i].playing = true;
 		}
+
+		players[4].money = 1000;
 
 		players[0].name = "Wojciech";
 		players[1].name = "Tristan";
@@ -287,7 +289,7 @@ private:
 			return BET_or_CALL;
 		}
 		else
-			return 0;
+			return FLOP;
 	}
 
 	/*checks if someone still got bet/call*/
