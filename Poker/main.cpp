@@ -58,6 +58,69 @@ int compareCards(const void *card1, const void *card2)
 	return (*(Card *)card1).rank - (*(Card *)card2).rank;
 }
 
+std::string drawSign(int amount, char sign)
+{	
+	using namespace std;
+
+	std::stringstream chars;
+	for(int i = 0; i < amount; i++)	
+		chars << sign;
+	
+	return chars.str();
+}
+
+void displayCards(Card cards[], int size)
+{
+	using namespace std;
+	int numberOfSpaces = 0;
+
+	//**DISPLAY UP**
+	cout << "      ";
+	for(int i = 0; i < size; i++)
+	{
+		if(cards[i].rank >= 0)
+			numberOfSpaces = suits[cards[i].suit].length() + 2;
+		
+		cout << ((cards[i].rank) >= 0 ? drawSign(numberOfSpaces, '_') : "___");
+		
+		cout << "   ";
+	}
+	cout << endl;
+	//--------------
+
+	//**DISPLAY RANKS**
+	cout << "     ";
+	for(int i = 0; i < size; i++)
+	{
+		if(cards[i].rank >= 0)
+			numberOfSpaces = suits[cards[i].suit].length() - ranks[cards[i].rank].length();
+		cout << "| " << ((cards[i].rank) >= 0 ? ranks[cards[i].rank] : " ") << ((cards[i].rank) >= 0 ? drawSign(numberOfSpaces, ' ') : "") << " | ";
+	}
+	cout << endl;
+	//---------------
+	
+	//**DISPLAY SUITS**
+	cout << "     ";
+	for(int i = 0; i < size; i++)
+	{
+		cout << "| " << ((cards[i].rank) >= 0 ? suits[cards[i].suit] : " ") << " | ";
+	}
+	cout << endl;
+	//---------------
+
+	//**DISPLAY BOTTOM**
+	cout << "     ";
+	for(int i = 0; i < size; i++)
+	{	
+		if(cards[i].rank >= 0)
+			numberOfSpaces = suits[cards[i].suit].length() + 2;
+		
+		cout << "|" << ((cards[i].rank) >= 0 ? drawSign(numberOfSpaces, '_') : "___") << "| ";		
+	}
+	cout << endl;
+	//---------------
+}
+
 class Deck
 {
 
@@ -78,10 +141,10 @@ public:
 				cards[i * ranks_count + j].rank = j;
 			}
 		}
-		suits[0] = "D";
-		suits[1] = "S";
-		suits[2] = "H";
-		suits[3] = "C";
+		suits[0] = "Diamonds";
+		suits[1] = "Spades";
+		suits[2] = "Hearts";
+		suits[3] = "Clubs";
 
 		ranks[0] = "2";
 		ranks[1] = "3";
@@ -92,10 +155,10 @@ public:
 		ranks[6] = "8";
 		ranks[7] = "9";
 		ranks[8] = "T";
-		ranks[9] = "J";
-		ranks[10] = "Q";
-		ranks[11] = "K";
-		ranks[12] = "A";
+		ranks[9] = "Joker";
+		ranks[10] = "Queen";
+		ranks[11] = "King";
+		ranks[12] = "Ace";
 	}
 
 	void print()
@@ -213,36 +276,80 @@ public:
 		using std::endl;
 		using std::setw;
 
-		cout << "------------------------------------------------------------------------------------------------------------------" << endl;
+		cout << "---------------------------------------------------------------------------------------------" << endl;
+		//--PLAYERS NAMES--
+
 		cout << "  " << ((players[0].playing) ? (players[0].name) : "      ") << "         " << ((players[1].playing) ? (players[1].name) : "     ") << "           "
 			<< ((players[2].playing) ? (players[2].name) : "    ") << endl;
+		//-----------------
+
+		//--PLAYERS MONEY--
 		cout << "   $" << setw(4) << ((players[0].playing) ? (players[0].money) : 0) << "         $" << setw(4) << ((players[1].playing) ? (players[1].money) : 0)
 			<< "           $" << setw(4) << ((players[2].playing) ? (players[2].money) : 0) << endl;
-		cout << "     _____________________________" << endl;
-		cout << "    / " << ((blind == 0) ? "@" : " ") << "            " << ((blind == 1) ? "@" : " ") << "            " << ((blind == 2) ? "@" : " ") << " \\" << endl;
-		cout << "   /  ___   ___   ___   ___   ___  \\" << endl;
-		cout << "   | | " << ((tableCards[0].rank) >= 0 ? ranks[tableCards[0].rank] : " ") << " | | " << ((tableCards[1].rank) >= 0 ? ranks[tableCards[1].rank] : " ") << " | | " << ((tableCards[2].rank) >= 0 ? ranks[tableCards[2].rank] : " ") << " | | "
-			<< ((tableCards[3].rank) >= 0 ? ranks[tableCards[3].rank] : " ") << " | | " << ((tableCards[4].rank) >= 0 ? ranks[tableCards[4].rank] : " ") << " | |" << endl;
-		cout << "   | | " << ((tableCards[0].rank) >= 0 ? suits[tableCards[0].suit] : " ") << " | | " << ((tableCards[1].rank) >= 0 ? suits[tableCards[1].suit] : " ") << " | | " << ((tableCards[2].rank) >= 0 ? suits[tableCards[2].suit] : " ") << " | | "
-			<< ((tableCards[3].rank) >= 0 ? suits[tableCards[3].suit] : " ") << " | | " << ((tableCards[4].rank) >= 0 ? suits[tableCards[4].suit] : " ") << " | |" << endl;
-		cout << "   | |___| |___| |___| |___| |___| |" << endl;
-		cout << "   |                               |" << endl;
-		cout << "   |	       Pot = $" << setw(4) << pot << "         |" << endl;
-		cout << "   \\                               /" << endl;
-		cout << "    \\_" << ((blind == 5) ? "@" : "_") << "_____________" << ((blind == 4) ? "@" : "_") << "___________" << ((blind == 3) ? "@" : "_") << "_/" << endl;
+		//-----------------
+
+		//----TABLE-TOP----
+		int tableLength = 0;
+
+		for(int i = 0; i < 5; i++)
+		{
+			tableLength += (tableCards[i].rank >= 0 ? suits[tableCards[i].suit].length() + 5 : 6);
+		}
+		cout << "    " << drawSign(tableLength, '_') << "_" << endl;
+		//-----------------
+
+		//--MOVING CHIP--
+		cout << "   / ";
+		for(int i = 0; i < 3; i++)
+		{
+			cout  << ((blind == i) ? "@" : " ");
+
+			if(i != 2)
+				cout << "          ";
+		}
+		cout << drawSign(tableLength - 23, ' ') << "\\" << endl;
+		//---------------
+
+		//----CARDS----
+		
+		displayCards(tableCards, 5);
+
+		//--------------
+		
+		//--POT--
+		int potMargin = (tableLength - 11) / 2;
+		cout << "     " << drawSign(potMargin, ' ') << "Pot = $" << setw(4) << pot << drawSign(potMargin, ' ') << "  " << endl;
+		//--------------
+		
+		//--MOVING CHIP--
+		cout << "   \\ ";
+		for(int i = 5; i > 2; i--)
+		{
+			cout  << ((blind  == i) ? "@" : " ");
+
+			if(i != 3)
+				cout << "          ";
+		}
+		cout << drawSign(tableLength - 23, ' ') << "/" << endl;
+		//--------------
+
+		//----TABLE-BOTTOM----
+		cout << "    \\" << drawSign(tableLength-1, '_') << "/" << endl;
+		//-----------------
 		cout << endl;
+
+		//--PLAYERS 4-6--
 		cout << "  " << ((players[5].playing) ? (players[5].name) : "      ") << "          " << ((players[player_index].playing) ? (players[player_index].name) : "      ") << "         "
 			<< ((players[3].playing) ? (players[3].name) : "    ") << endl;
 		cout << "   $" << setw(4) << ((players[5].playing) ? (players[5].money) : 0) << "          $" << setw(4) << ((players[player_index].playing) ? (players[player_index].money) : 0)
 			<< "         $" << setw(4) << ((players[3].playing) ? (players[3].money) : 0) << endl;
 		cout << endl;
+		//-----------------
+
 		if (players[player_index].round)
 		{
 			cout << "   Your hand:" << endl;
-			cout << "    ___    ___" << endl;
-			cout << "   | " << ranks[players[player_index].cards[0].rank] << " |  | " << ranks[players[player_index].cards[1].rank] << " |" << endl;
-			cout << "   | " << suits[players[player_index].cards[0].suit] << " |  | " << suits[players[player_index].cards[1].suit] << " |" << endl;
-			cout << "   |___|  |___|" << endl << endl;
+			displayCards(players[player_index].cards, 2);
 		}
 
 		_sleep(3);
@@ -754,11 +861,10 @@ private:
 					cout << "[WINNER] " << players[i].name << "'s " << " hand:" << endl;
 				else	
 					cout << players[i].name << "'s " << " hand:" << endl;
-				cout << "   ___   ___   ___   ___   ___" << endl;
-				cout << "  | " << ranks[cards[0].rank] << " | | " << ranks[cards[1].rank] << " | | " << ranks[cards[2].rank] << " | | " << ranks[cards[3].rank] << " | | " << ranks[cards[4].rank] << " |" << endl;
-				cout << "  | " << suits[cards[0].suit] << " | | " << suits[cards[1].suit] << " | | " << suits[cards[2].suit] << " | | " << suits[cards[3].suit] << " | | " << suits[cards[4].suit] << " |" << endl;
-				cout << "  |___| |___| |___| |___| |___|" << endl;
-				cout << endl << endl;
+				
+				cout << endl;
+				displayCards(cards, 5);
+				cout << endl;
 			}
 		}
 
@@ -803,7 +909,15 @@ private:
 			}
 
 			blind = i % players_count;
-			player_paying_blind = (blind + 1) % players_count;
+
+			for(int i = 1; i <= players_count; i++)
+			{
+				if(players[i].playing)
+				{
+					player_paying_blind = (blind + i) % players_count;
+					break;	
+				}
+			}
 
 			/* paying blind */
 			pot = 20;
