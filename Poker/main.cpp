@@ -1,10 +1,10 @@
-
 /****************************************************************************/
-/*                A simple Texas Hold'em Poker simulartion.                 */
+/*                A simple Texas Hold'em Poker simulation.                 */
 /*                Program runs fine, but gameplay still has some bugs.      */
 /****************************************************************************/
 
 #include <iostream>
+#include <sstream>
 #include <iomanip>
 #include <string>
 #include <cstdlib>
@@ -21,7 +21,7 @@ enum actions
 {
 	FLOP = 1,
 	CHECK = 2,
-	BET_or_CALL= 3,
+	BET_or_CALL = 3,
 	RAISE = 4
 };
 
@@ -42,7 +42,7 @@ void press_Enter()
 void _sleep(int time)
 {
 #ifdef __linux__ 
-	usleep(time*1000);
+	usleep(time * 1000);
 #elif _WIN32
 	Sleep(time);
 #endif
@@ -61,13 +61,13 @@ int compareCards(const void *card1, const void *card2)
 }
 
 std::string drawSign(int amount, char sign)
-{	
+{
 	using namespace std;
 
-	std::stringstream chars;
-	for(int i = 0; i < amount; i++)	
+	stringstream chars;
+	for (int i = 0; i < amount; i++)
 		chars << sign;
-	
+
 	return chars.str();
 }
 
@@ -78,13 +78,13 @@ void displayCards(Card cards[], int size)
 
 	//**DISPLAY UP**
 	cout << "      ";
-	for(int i = 0; i < size; i++)
+	for (int i = 0; i < size; i++)
 	{
-		if(cards[i].rank >= 0)
+		if (cards[i].rank >= 0)
 			numberOfSpaces = suits[cards[i].suit].length() + 2;
-		
+
 		cout << ((cards[i].rank) >= 0 ? drawSign(numberOfSpaces, '_') : "___");
-		
+
 		cout << "   ";
 	}
 	cout << endl;
@@ -92,18 +92,18 @@ void displayCards(Card cards[], int size)
 
 	//**DISPLAY RANKS**
 	cout << "     ";
-	for(int i = 0; i < size; i++)
+	for (int i = 0; i < size; i++)
 	{
-		if(cards[i].rank >= 0)
+		if (cards[i].rank >= 0)
 			numberOfSpaces = suits[cards[i].suit].length() - ranks[cards[i].rank].length();
 		cout << "| " << ((cards[i].rank) >= 0 ? ranks[cards[i].rank] : " ") << ((cards[i].rank) >= 0 ? drawSign(numberOfSpaces, ' ') : "") << " | ";
 	}
 	cout << endl;
 	//---------------
-	
+
 	//**DISPLAY SUITS**
 	cout << "     ";
-	for(int i = 0; i < size; i++)
+	for (int i = 0; i < size; i++)
 	{
 		cout << "| " << ((cards[i].rank) >= 0 ? suits[cards[i].suit] : " ") << " | ";
 	}
@@ -112,12 +112,12 @@ void displayCards(Card cards[], int size)
 
 	//**DISPLAY BOTTOM**
 	cout << "     ";
-	for(int i = 0; i < size; i++)
-	{	
-		if(cards[i].rank >= 0)
+	for (int i = 0; i < size; i++)
+	{
+		if (cards[i].rank >= 0)
 			numberOfSpaces = suits[cards[i].suit].length() + 2;
-		
-		cout << "|" << ((cards[i].rank) >= 0 ? drawSign(numberOfSpaces, '_') : "___") << "| ";		
+
+		cout << "|" << ((cards[i].rank) >= 0 ? drawSign(numberOfSpaces, '_') : "___") << "| ";
 	}
 	cout << endl;
 	//---------------
@@ -221,12 +221,12 @@ class PokerGame
 public:
 	int players_count;
 	Player * players;
-	std::string playerNames[10] = {"Wojciech", "Tristan", "Michal", "Jotaro", "Joseph", "Mielnik", "Diego", "Edyta", "Jan", "XD"};
+	std::string playerNames[10] = { "Wojciech", "Tristan", "Michal", "Jotaro", "Joseph", "Mielnik", "Diego", "Edyta", "Jan", "XD" };
 
-	void start(const std::string &name, std::string &numberOfPlayers)
+	void start(const std::string &name, int numberOfPlayers)
 	{
-		players_count = stoi(numberOfPlayers);
-		players = (Player*)malloc(players_count * sizeof(Player));
+		players_count = numberOfPlayers;
+		players = new Player[players_count];
 
 		for (int i = 0; i < players_count; i++)
 		{
@@ -234,16 +234,16 @@ public:
 			players[i].playing = true;
 		}
 
-		players[4].money = 1000;
+		players[player_index].money = 1000;
 
-		for(int i = 0; i < players_count; i++)
+		for (int i = 0; i < players_count; i++)
 		{
-			if(i == player_index)
+			if (i == player_index)
 				players[player_index].name = name;
-			else 
+			else
 				players[i].name = playerNames[i];
 		}
-			
+
 		startGame();
 	}
 
@@ -286,107 +286,88 @@ public:
 		using std::endl;
 		using std::setw;
 
-		int upperHalfOfPlayers = ceil(players_count/2);
+		int upperHalfOfPlayers = ceil((float)players_count / 2);
 
 		cout << "---------------------------------------------------------------------------------------------" << endl;
-		//--PLAYERS NAMES--
-		cout << "  ";
-		for(int i = 0; i < upperHalfOfPlayers; i++)
-		{
-			cout << ((players[i].playing) ? (players[i].name) : "      ") << "         ";
-		}		
+		//--PLAYERS NAMES 1-3--
+		cout << "     ";
+		for (int i = 0; i < upperHalfOfPlayers; i++)
+			cout << std::left << setw(16) << ((players[i].playing) ? (players[i].name) : "      ");
+
 		cout << endl;
 		//-----------------
 
-		//--PLAYERS MONEY--
-		cout << "   ";
-		for(int i = 0; i < upperHalfOfPlayers; i++)
-		{
-			cout << "$" << setw(4) << ((players[i].playing) ? (players[i].money) : 0) << "          ";
-		}
+		//--PLAYERS MONEY 1-3--
+		cout << "     ";
+		for (int i = 0; i < upperHalfOfPlayers; i++)
+			cout << std::left << "$" << setw(15) << ((players[i].playing) ? (players[i].money) : 0);
 		cout << endl;
 		//-----------------
 
 		//----TABLE-TOP----
 		int tableLength = 0;
 
-		for(int i = 0; i < 5; i++)
-		{
-			tableLength += (tableCards[i].rank >= 0 ? suits[tableCards[i].suit].length() + 5 : 6);
-		}
-		cout << "    " << drawSign(tableLength, '_') << "_" << endl;
+		tableLength += upperHalfOfPlayers * 16;
+
+		cout << "    " << drawSign(tableLength, '_') << endl;
 		//-----------------
 
 		//--MOVING CHIP--
-		cout << "   / ";
-		for(int i = 0; i < 3; i++)
-		{
-			cout  << ((blind == i) ? "@" : " ");
-
-			if(i != 2)
-				cout << "          ";
-		}
-		cout << drawSign(tableLength - 23, ' ') << "\\" << endl;
+		cout << "   /";
+		for (int i = 0; i < upperHalfOfPlayers; i++)
+			cout << ((player_with_chip == i) ? " @              " : "                ");
+		cout << "\\" << endl;
 		//---------------
 
 		//----CARDS----
-		
 		displayCards(tableCards, 5);
-
 		//--------------
-		
+
 		//--POT--
 		int potMargin = (tableLength - 11) / 2;
 		cout << "     " << drawSign(potMargin, ' ') << "Pot = $" << setw(4) << pot << drawSign(potMargin, ' ') << "  " << endl;
 		//--------------
-		
-		//--MOVING CHIP--
-		cout << "   \\ ";
-		for(int i = 5; i > 2; i--)
-		{
-			cout  << ((blind  == i) ? "@" : " ");
 
-			if(i != 3)
-				cout << "          ";
-		}
-		cout << drawSign(tableLength - 23, ' ') << "/" << endl;
+		//--MOVING CHIP--
+		cout << "   \\";
+		for (int i = players_count - 1; i > upperHalfOfPlayers - 1; i--)
+			cout << ((player_with_chip == i) ? " @              " : "                ");
+		cout << "/" << endl;
 		//--------------
 
 		//----TABLE-BOTTOM----
-		cout << "    \\" << drawSign(tableLength-1, '_') << "/" << endl;
+		cout << "    \\" << drawSign(tableLength - 1, '_') << "/" << endl;
 		//-----------------
 		cout << endl;
 
-		//--PLAYERS 4-6--
-		cout << "  ";
-		for(int i = players_count - 1; i > upperHalfOfPlayers - 1; i--)
-		{
-			cout << ((players[i].playing) ? (players[i].name) : "      ") << "         ";
-		}		
+		//--PLAYER NAMES4-6--
+		cout << "     ";
+		for (int i = players_count - 1; i > upperHalfOfPlayers - 1; i--)
+			cout << std::left << setw(16) << ((players[i].playing) ? (players[i].name) : "      ");
+
 		cout << endl;
 		//-----------------
 
 		//--PLAYERS MONEY 4-6--
-		cout << "   ";
-		for(int i = players_count - 1; i > upperHalfOfPlayers - 1; i--)
-		{
-			cout << "$" << setw(4) << ((players[i].playing) ? (players[i].money) : 0) << "          ";
-		}
-		cout << endl;
+		cout << "     ";
+		for (int i = players_count - 1; i > upperHalfOfPlayers - 1; i--)
+			cout << std::left << "$" << setw(15) << ((players[i].playing) ? (players[i].money) : 0);
+
+		cout << endl << endl;
 		//-----------------
 
 		if (players[player_index].round)
 		{
-			cout << "   Your hand:" << endl;
+			cout << " Your hand:" << endl;
 			displayCards(players[player_index].cards, 2);
 		}
 
-		_sleep(3);
+		cout << endl;
 	}
 
 private:
 	Deck deck1;
-	int blind;
+	int player_with_chip = 0;
 	Card tableCards[5];
 	int pot, action, bet, raise, betOn, winner, maxPoints, roundWinner;
 	int handPoints[6];
@@ -417,23 +398,23 @@ private:
 			{
 				if (players[playerNum].cards[0].rank != players[playerNum].cards[1].rank)
 					return CHECK;
-				else if(players[playerNum].money >= betOn && betOn > 0)
-					return RAISE;		
-				else if(players[playerNum].money >= betOn)
+				else if (players[playerNum].money >= betOn && betOn > 0)
+					return RAISE;
+				else if (players[playerNum].money > 0)
 					return BET_or_CALL;
 				else
 					return FLOP;
 			}
 			else if (players[playerNum].money >= betOn && betOn > 0)
 				return RAISE;
-			else if (players[playerNum].money >= betOn)
+			else if (players[playerNum].money > 0)
 				return BET_or_CALL;
 			else
 				return FLOP;
 		}
 		else if (players[playerNum].money >= betOn && betOn > 0)
 			return rand() % 4 + 1;
-		else if (players[playerNum].money >= betOn)
+		else if (players[playerNum].money > betOn)
 			return rand() % 3 + 1;
 		else
 			return rand() % 2 + 1;
@@ -459,25 +440,25 @@ private:
 		for (int k = 0; k < players_count; k++)
 			players[k].goodToGo = 0;
 
-		for (int k = blind; k < blind + players_count; k++)
+		for (int k = player_with_chip; k < player_with_chip + players_count; k++)
 		{
 			/* human player actions */
 			if (k % players_count == 4 && players[player_index].round)
 			{
 				if (betOn)
 				{
-					if(players[player_index].money >= betOn)
+					if (players[player_index].money >= betOn)
 						cout << "\t\t\t\t\tYour action: (1) FLOP (3) BET/CALL (4) RRRRRAISE? ";
 					else
 						cout << "\t\t\t\t\tYour action: (1) FLOP";
 					cin >> action;
 
-					if(players[player_index].money >= betOn)
+					if (players[player_index].money >= betOn)
 					{
 						while (action != FLOP && action != BET_or_CALL && action != RAISE)
 						{
 							cout << "Invalid number pressed." << endl;
-							cout << "\t\t\t\t\tYour action: (1) FLOP (3) BET/CALL (4) RRRRAISE?";
+							cout << "\t\t\t\t\tYour action: (1) FLOP (3) BET/CALL (4) RRRRRAISE?";
 							cin >> action;
 						}
 					}
@@ -489,23 +470,23 @@ private:
 							cout << "\t\t\t\t\tYour action: (1) FLOP";
 							cin >> action;
 						}
-					}	
+					}
 				}
 				else
 				{
-					if(players[player_index].money > 0) 
-						cout << "\t\t\t\t\tYour action: (1) FLOP (2) CHECK (3) BET/CALL ";						
+					if (players[player_index].money > 0)
+						cout << "\t\t\t\t\tYour action: (1) FLOP (2) CHECK (3) BET/CALL ";
 					else
 						cout << "\t\t\t\t\tYour action: (1) FLOP (2) CHECK ";
 					cin >> action;
 
 
-					if(players[player_index].money > 0)
+					if (players[player_index].money > 0)
 					{
 						while (action != FLOP && action != CHECK && action != BET_or_CALL)
 						{
 							cout << "Invalid number pressed." << endl;
-							cout << "\t\t\t\t\tYour action: (1) FLOP (2) CHECK (3) BET/CALL ";						
+							cout << "\t\t\t\t\tYour action: (1) FLOP (2) CHECK (3) BET/CALL ";
 							cin >> action;
 						}
 					}
@@ -518,7 +499,6 @@ private:
 							cin >> action;
 						}
 					}
-					
 				}
 
 				cout << endl;
@@ -561,7 +541,7 @@ private:
 						cout << "\t+ " << players[player_index].name << " bets " << bet << "$\n";
 					}
 				}
-				else 
+				else
 				{
 					cout << "How much do you want to raise: ";
 					cin >> raise;
@@ -574,8 +554,8 @@ private:
 					}
 
 					pot += raise;
-					players[player_index].money -= raise;
 					betOn += raise;
+					players[player_index].money -= betOn;
 					players[player_index].goodToGo = 1;
 
 					cout << "\t+ " << players[player_index].name << " r-r-r-r-raises! " << raise << "$\n";
@@ -585,9 +565,7 @@ private:
 			else
 			{
 				if (players[k % players_count].round == 0)
-				{
 					continue;
-				}
 
 				action = computerAction(k % players_count);
 
@@ -621,23 +599,22 @@ private:
 						players[k % players_count].goodToGo = 1;
 					}
 				}
-				else 
+				else
 				{
 					raise = (rand() % players[k % players_count].money) + 1;
-					pot += raise;
-					players[k % players_count].money -= raise;
+					betOn += raise;
+					pot += betOn;
+					players[k % players_count].money -= betOn;
 					cout << '\a';
 					cout << "\t+ " << players[k % players_count].name << " r-r-r-r-r-raises! " << raise << "$" << endl;
-					betOn += bet;
 					players[k % players_count].goodToGo = 1;
 				}
-				_sleep(1);
 			}
 		}
 
 		if (betOn && playersToBet())
 		{
-			for (int k = blind + 1; k < blind + 7; k++)
+			for (int k = player_with_chip + 1; k < player_with_chip + 7; k++)
 			{
 				if (k % players_count == 4)
 				{
@@ -872,23 +849,23 @@ private:
 
 		Card cards[5];
 
-		for(int i = 0; i < 3; i++)
-			cards[i+2] = tableCards[bestHand[winner][i]];
+		for (int i = 0; i < 3; i++)
+			cards[i + 2] = tableCards[bestHand[winner][i]];
 
-		for(int i = 0; i < players_count; i++)
+		for (int i = 0; i < players_count; i++)
 		{
-			if(players[i].playing)
+			if (players[i].playing)
 			{
-				for(int j = 0; j < 2; j++)
-				cards[j] = players[i].cards[j];
+				for (int j = 0; j < 2; j++)
+					cards[j] = players[i].cards[j];
 
 				qsort(cards, 5, sizeof(Card), compareCards);
-	
-				if(i == winner)
+
+				if (i == winner)
 					cout << "[WINNER] " << players[i].name << "'s " << " hand:" << endl;
-				else	
+				else
 					cout << players[i].name << "'s " << " hand:" << endl;
-				
+
 				cout << endl;
 				displayCards(cards, 5);
 				cout << endl;
@@ -935,15 +912,28 @@ private:
 				break;
 			}
 
-			blind = i % players_count;
-
-			for(int i = 1; i <= players_count; i++)
+			for (int i = player_with_chip; i < players_count + player_with_chip; i++)
 			{
-				if(players[i].playing)
+				if (players[i % players_count].playing)
 				{
-					player_paying_blind = (blind + i) % players_count;
-					break;	
+					player_with_chip = i % players_count;
+					std::cout << "** " << players[player_with_chip].name << " Owns chip!" << " **" << std::endl;
+					break;
 				}
+				else
+					continue;
+			}
+
+			for (int i = player_with_chip + 1; i < players_count + player_with_chip; i++)
+			{
+				if (players[i % players_count].playing)
+				{
+					player_paying_blind = i % players_count;
+					std::cout << "** " << players[player_paying_blind].name << " Pays blind!" << " **" << std::endl;
+					break;
+				}
+				else
+					continue;
 			}
 
 			/* paying blind */
@@ -955,7 +945,6 @@ private:
 
 			std::cout << "\n\n\n";
 			std::cout << "\t\t\t\t\t ------ ROUND " << i + 1 << " ------\n\n\n";
-			_sleep(1000);
 			deck1.shuffle();
 
 			/* pre-flop */
@@ -969,6 +958,7 @@ private:
 				players[winner].money += pot;
 				std::cout << players[winner].name << " wins $" << pot << "\n\n";
 				printAllHands(winner);
+				player_with_chip = (player_with_chip + 1) % players_count;
 				i++;
 				continue;
 			}
@@ -985,6 +975,7 @@ private:
 				players[winner].money += pot;
 				std::cout << players[winner].name << " wins $" << pot << "\n\n";
 				printAllHands(winner);
+				player_with_chip = (player_with_chip + 1) % players_count;
 				i++;
 				continue;
 			}
@@ -1001,6 +992,7 @@ private:
 				players[winner].money += pot;
 				std::cout << players[winner].name << " wins $" << pot << "\n\n";
 				printAllHands(winner);
+				player_with_chip = (player_with_chip + 1) % players_count;
 				i++;
 				continue;
 			}
@@ -1054,6 +1046,7 @@ private:
 
 			players[roundWinner].money += pot;
 
+			player_with_chip = (player_with_chip + 1) % players_count;
 			i++;
 		}
 
@@ -1080,16 +1073,18 @@ int main()
 	cout << "   #    #       #  #    #      #       #    # #   #  #      #   #" << endl;
 	cout << "   #    ###### #    #   #      #        ####  #    # ###### #    #" << endl << endl;
 
-	std::string buffer;
+	std::string numberOfPlayersBuffer;
 
 	cout << "Please type your name: ";
 	std::cin >> name;
-	cout << "Selec number of players: ";
-	std::cin >> buffer;
+	cout << "Select number of players: ";
+	std::cin >> numberOfPlayersBuffer;
+
+	cout << endl;
 
 	cout << "OK " << name << " let's play some poker!" << endl << endl;
 
-	game1.start(name, buffer);
+	game1.start(name, stoi(numberOfPlayersBuffer));
 
 	return 0;
 }
