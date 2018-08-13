@@ -254,7 +254,7 @@ private:
 	Deck deck1;
 	int blind;
 	Card tableCards[5];
-	int pot, action, bet, raise, rational, betOn, winner, maxPoints, roundWinner;
+	int pot, action, bet, raise, betOn, winner, maxPoints, roundWinner;
 	int handPoints[6];
 	int bestHand[6][3];
 
@@ -269,31 +269,40 @@ private:
 
 	int computerAction(int playerNum)
 	{
-
-		if (players[playerNum].cards[0].rank < 8 && players[playerNum].cards[1].rank < 8)
+		int rational = rand() % 2;
+		if (rational)
 		{
-			if (players[playerNum].cards[0].rank != players[playerNum].cards[1].rank)
-				return FLOP;
-			else
-				return CHECK;
-		}
-		else if (players[playerNum].cards[0].rank < 10 && players[playerNum].cards[1].rank < 10)
-		{
-			if (players[playerNum].cards[0].rank != players[playerNum].cards[1].rank)
-				return CHECK;
-			else if(players[playerNum].money >= betOn && betOn > 0)
-				return RAISE;		
-			else if(players[playerNum].money >= betOn)
+			if (players[playerNum].cards[0].rank < 8 && players[playerNum].cards[1].rank < 8)
+			{
+				if (players[playerNum].cards[0].rank != players[playerNum].cards[1].rank)
+					return FLOP;
+				else
+					return CHECK;
+			}
+			else if (players[playerNum].cards[0].rank < 10 && players[playerNum].cards[1].rank < 10)
+			{
+				if (players[playerNum].cards[0].rank != players[playerNum].cards[1].rank)
+					return CHECK;
+				else if(players[playerNum].money >= betOn && betOn > 0)
+					return RAISE;		
+				else if(players[playerNum].money >= betOn)
+					return BET_or_CALL;
+				else
+					return FLOP;
+			}
+			else if (players[playerNum].money >= betOn && betOn > 0)
+				return RAISE;
+			else if (players[playerNum].money >= betOn)
 				return BET_or_CALL;
 			else
 				return FLOP;
 		}
 		else if (players[playerNum].money >= betOn && betOn > 0)
-			return RAISE;
+			return rand() % 4 + 1;
 		else if (players[playerNum].money >= betOn)
-			return BET_or_CALL;
+			return rand() % 3 + 1;
 		else
-			return FLOP;
+			return rand() % 2 + 1;
 	}
 
 	/*checks if someone still got bet/call*/
@@ -446,23 +455,7 @@ private:
 					continue;
 				}
 
-				rational = rand() % 2;
-				if (rational)
-				{
-					action = computerAction(k % players_count);
-				}
-				else if (players[k % players_count].money >= betOn && betOn > 0)
-				{
-					action = rand() % 4 + 1;
-				}
-				else if (players[k % players_count].money >= betOn)
-				{
-					action = rand() % 3 + 1;
-				}
-				else
-				{
-					action = rand() % 2 + 1;
-				}
+				action = computerAction(k % players_count);
 
 				if (action == FLOP)
 				{
