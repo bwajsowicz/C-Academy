@@ -331,7 +331,7 @@ private:
 
 					if(players[player_index].money >= betOn)
 					{
-						while (action != FLOP && action != BET_or_CALL && action != RAISE )
+						while (action != FLOP && action != BET_or_CALL && action != RAISE)
 						{
 							cout << "Invalid number pressed." << endl;
 							cout << "\t\t\t\t\tYour action: (1) FLOP (3) BET/CALL (4) RRRRAISE?";
@@ -350,27 +350,32 @@ private:
 				}
 				else
 				{
-
-					int actionRange = RAISE;
-
-					if(players[player_index].money > 0)
+					if(players[player_index].money > 0) 
 						cout << "\t\t\t\t\tYour action: (1) FLOP (2) CHECK (3) BET/CALL ";						
 					else
-					{
 						cout << "\t\t\t\t\tYour action: (1) FLOP (2) CHECK ";
-						actionRange = CHECK;
-					}
 					cin >> action;
-					while (action < FLOP|| action > actionRange )
-					{
-						cout << "Invalid number pressed." << endl;
-						if(players[player_index].money > 0)
-							cout << "\t\t\t\t\tYour action: (1) FLOP (2) CHECK (3) BET/CALL ";						
-						else
-							cout << "\t\t\t\t\tYour action: (1) FLOP (2) CHECK ";
 
-						cin >> action;
+
+					if(players[player_index].money > 0)
+					{
+						while (action != FLOP && action != CHECK && action != BET_or_CALL)
+						{
+							cout << "Invalid number pressed." << endl;
+							cout << "\t\t\t\t\tYour action: (1) FLOP (2) CHECK (3) BET/CALL ";						
+							cin >> action;
+						}
 					}
+					else
+					{
+						while (action != FLOP && action != CHECK)
+						{
+							cout << "Invalid number pressed." << endl;
+							cout << "\t\t\t\t\tYour action: (1) FLOP (2) CHECK ";
+							cin >> action;
+						}
+					}
+					
 				}
 
 				cout << endl;
@@ -417,7 +422,7 @@ private:
 				{
 					cout << "How much do you want to raise: ";
 					cin >> raise;
-					while (raise > players[player_index].money || raise < betOn || raise < 1)
+					while (raise > players[player_index].money || raise <= betOn || raise <= 0)
 					{
 						cout << "Invalid number to raise." << endl;
 						cout << "How much do you want to raise: ";
@@ -430,7 +435,7 @@ private:
 					betOn += raise;
 					players[player_index].goodToGo = 1;
 
-					cout << "\t+ " << players[player_index].name << " r-r-r-r-reises! " << raise << "$\n";
+					cout << "\t+ " << players[player_index].name << " r-r-r-r-raises! " << raise << "$\n";
 				}
 			}
 			/* computers actions */
