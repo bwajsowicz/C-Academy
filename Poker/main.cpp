@@ -307,7 +307,7 @@ private:
 		for (int k = 0; k < players_count; k++)
 			players[k].goodToGo = 0;
 
-		for (int k = bind + 1; k < bind + 7; k++)
+		for (int k = bind; k < bind + players_count; k++)
 		{
 			/* human player actions */
 			if (k % players_count == 4 && players[player_index].round)
@@ -761,6 +761,7 @@ private:
 			if (oneLeft())
 			{
 				winner = getWinner();
+				players[roundWinner].money += pot;
 				std::cout << players[winner].name << " wins $" << pot << "\n\n";
 				printAllHands(winner);
 				i++;
@@ -776,6 +777,7 @@ private:
 			if (oneLeft())
 			{
 				winner = getWinner();
+				players[roundWinner].money += pot;
 				std::cout << players[winner].name << " wins $" << pot << "\n\n";
 				printAllHands(winner);
 				i++;
@@ -791,6 +793,7 @@ private:
 			if (oneLeft())
 			{
 				winner = getWinner();
+				players[roundWinner].money += pot;
 				std::cout << players[winner].name << " wins $" << pot << "\n\n";
 				printAllHands(winner);
 				i++;
