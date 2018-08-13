@@ -9,11 +9,13 @@
 #include <string>
 #include <cstdlib>
 #include <ctime>
+#include <math.h>
 #ifdef __linux__ 
 #include <unistd.h>
 #elif _WIN32
 #include <windows.h>
 #endif
+
 
 enum actions
 {
@@ -217,8 +219,15 @@ public:
 class PokerGame
 {
 public:
-	void start(const std::string &name)
+	int players_count;
+	Player * players;
+	std::string playerNames[10] = {"Wojciech", "Tristan", "Michal", "Jotaro", "Joseph", "Mielnik", "Diego", "Edyta", "Jan", "XD"};
+
+	void start(const std::string &name, std::string &numberOfPlayers)
 	{
+		players_count = stoi(numberOfPlayers);
+		players = (Player*)malloc(players_count * sizeof(Player));
+
 		for (int i = 0; i < players_count; i++)
 		{
 			players[i].money = 100;
@@ -227,13 +236,14 @@ public:
 
 		players[4].money = 1000;
 
-		players[0].name = "Wojciech";
-		players[1].name = "Tristan";
-		players[2].name = "Michal";
-		players[3].name = "Edyta";
-		players[player_index].name = name;
-		players[5].name = "Kamil";
-
+		for(int i = 0; i < players_count; i++)
+		{
+			if(i == player_index)
+				players[player_index].name = name;
+			else 
+				players[i].name = playerNames[i];
+		}
+			
 		startGame();
 	}
 
@@ -276,16 +286,25 @@ public:
 		using std::endl;
 		using std::setw;
 
+		int upperHalfOfPlayers = ceil(players_count/2);
+
 		cout << "---------------------------------------------------------------------------------------------" << endl;
 		//--PLAYERS NAMES--
-
-		cout << "  " << ((players[0].playing) ? (players[0].name) : "      ") << "         " << ((players[1].playing) ? (players[1].name) : "     ") << "           "
-			<< ((players[2].playing) ? (players[2].name) : "    ") << endl;
+		cout << "  ";
+		for(int i = 0; i < upperHalfOfPlayers; i++)
+		{
+			cout << ((players[i].playing) ? (players[i].name) : "      ") << "         ";
+		}		
+		cout << endl;
 		//-----------------
 
 		//--PLAYERS MONEY--
-		cout << "   $" << setw(4) << ((players[0].playing) ? (players[0].money) : 0) << "         $" << setw(4) << ((players[1].playing) ? (players[1].money) : 0)
-			<< "           $" << setw(4) << ((players[2].playing) ? (players[2].money) : 0) << endl;
+		cout << "   ";
+		for(int i = 0; i < upperHalfOfPlayers; i++)
+		{
+			cout << "$" << setw(4) << ((players[i].playing) ? (players[i].money) : 0) << "          ";
+		}
+		cout << endl;
 		//-----------------
 
 		//----TABLE-TOP----
@@ -339,10 +358,20 @@ public:
 		cout << endl;
 
 		//--PLAYERS 4-6--
-		cout << "  " << ((players[5].playing) ? (players[5].name) : "      ") << "          " << ((players[player_index].playing) ? (players[player_index].name) : "      ") << "         "
-			<< ((players[3].playing) ? (players[3].name) : "    ") << endl;
-		cout << "   $" << setw(4) << ((players[5].playing) ? (players[5].money) : 0) << "          $" << setw(4) << ((players[player_index].playing) ? (players[player_index].money) : 0)
-			<< "         $" << setw(4) << ((players[3].playing) ? (players[3].money) : 0) << endl;
+		cout << "  ";
+		for(int i = players_count - 1; i > upperHalfOfPlayers - 1; i--)
+		{
+			cout << ((players[i].playing) ? (players[i].name) : "      ") << "         ";
+		}		
+		cout << endl;
+		//-----------------
+
+		//--PLAYERS MONEY 4-6--
+		cout << "   ";
+		for(int i = players_count - 1; i > upperHalfOfPlayers - 1; i--)
+		{
+			cout << "$" << setw(4) << ((players[i].playing) ? (players[i].money) : 0) << "          ";
+		}
 		cout << endl;
 		//-----------------
 
@@ -356,8 +385,6 @@ public:
 	}
 
 private:
-	static const int players_count = 6;
-	Player players[players_count];
 	Deck deck1;
 	int blind;
 	Card tableCards[5];
@@ -1053,12 +1080,16 @@ int main()
 	cout << "   #    #       #  #    #      #       #    # #   #  #      #   #" << endl;
 	cout << "   #    ###### #    #   #      #        ####  #    # ###### #    #" << endl << endl;
 
+	std::string buffer;
+
 	cout << "Please type your name: ";
 	std::cin >> name;
+	cout << "Selec number of players: ";
+	std::cin >> buffer;
 
 	cout << "OK " << name << " let's play some poker!" << endl << endl;
 
-	game1.start(name);
+	game1.start(name, buffer);
 
 	return 0;
 }
