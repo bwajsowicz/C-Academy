@@ -398,26 +398,63 @@ private:
 			{
 				if (players[playerNum].cards[0].rank != players[playerNum].cards[1].rank)
 					return CHECK;
-				else if (players[playerNum].money >= betOn && betOn > 0)
-					return RAISE;
-				else if (players[playerNum].money > 0)
-					return BET_or_CALL;
 				else
 					return FLOP;
 			}
-			else if (players[playerNum].money >= betOn && betOn > 0)
-				return RAISE;
-			else if (players[playerNum].money > 0)
-				return BET_or_CALL;
+			else if (players[playerNum].cards[0].rank <= 12 && players[playerNum].cards[1].rank <= 12)
+			{
+				if(players[playerNum].cards[0].rank != players[playerNum].cards[1].rank)
+				{
+					return CHECK;
+				}
+				else
+				{
+					if(players[playerNum].money > 0)
+					{
+						int choice = 0;
+						if(betOn)
+						{
+							if(players[playerNum].money > betOn)
+							{
+								choice = rand() % 2;
+
+								if(choice)
+									return RAISE;
+								else
+									return BET_or_CALL;
+							}
+							else
+								return FLOP;
+						}
+						else
+							return BET_or_CALL;
+					}
+					else
+						return FLOP;
+				}
+			}
 			else
 				return FLOP;
 		}
-		else if (players[playerNum].money >= betOn && betOn > 0)
-			return rand() % 4 + 1;
-		else if (players[playerNum].money > betOn)
-			return rand() % 3 + 1;
 		else
-			return rand() % 2 + 1;
+		{
+			if(players[playerNum].money > 0)
+			{
+				if(betOn)
+				{
+					if(players[playerNum].money > betOn)
+					{
+						return rand() % 4 + 1;
+					}
+					else
+						return FLOP;
+				}
+				else
+					return rand() % 3 + 1 ;
+			}
+			else
+				return rand() % 2 + 1;
+		}
 	}
 
 	/*checks if someone still got bet/call*/
@@ -545,7 +582,7 @@ private:
 				{
 					cout << "How much do you want to raise: ";
 					cin >> raise;
-					while (raise > players[player_index].money || raise <= betOn || raise <= 0)
+					while (raise > players[player_index].money - betOn || raise <= betOn || raise <= 0)
 					{
 						cout << "Invalid number to raise." << endl;
 						cout << "How much do you want to raise: ";
@@ -601,12 +638,12 @@ private:
 				}
 				else
 				{
-					raise = (rand() % players[k % players_count].money) + 1;
+					raise = (rand() % (players[k % players_count].money - betOn) + 1);
 					betOn += raise;
 					pot += betOn;
 					players[k % players_count].money -= betOn;
 					cout << '\a';
-					cout << "\t+ " << players[k % players_count].name << " r-r-r-r-r-raises! " << raise << "$" << endl;
+					cout << "\t+ " << players[k % players_count].name << " r-r-r-r-raises! " << raise << "$" << endl;
 					players[k % players_count].goodToGo = 1;
 				}
 			}
