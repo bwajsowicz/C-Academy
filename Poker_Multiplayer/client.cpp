@@ -12,139 +12,221 @@
 #include <string>
 #include <string.h>
 #include <iostream>
+#include <stdbool.h>
 
 #define MAX_EVENTS 10
 
-void error(char *message)
+void Error(char *message)
 {
-    perror(message);
+    pError(message);
     exit(1);
 }
 
-int create_socket()
+//TODO: move whole networking to separate class
+int CreateSocket()
 {
-    int new_socket;
+    int newSocket;
 
-    new_socket = socket(AF_INET, SOCK_STREAM, 0);
+    newSocket = socket(AF_INET, SOCK_STREAM, 0);
 
-    if(new_socket < 0)
-        error("ERROR, can't open new socket!\n");
+    if(newSocket < 0)
+        Error("Error, can't open new socket!\n");
 
-    return new_socket;
+    return newSocket;
 }
 
-void connect_to_server(int server_socket, char *argv[])
+void EstablishConnection(int serverSocket, char *argv[])
 {
     struct hostent *server;
-    struct sockaddr_in server_address;
+    struct sockaddr_in serverAddress;
     int port;
 
     port = atoi(argv[2]);
 
     server = gethostbyname(argv[1]);
     if (server == NULL)
-        error("Host not found!\n");
+        Error("Host not found!\n");
 
-    bzero((char *) &server_address, sizeof(server_address));
-    server_address.sin_family = AF_INET;
+    bzero((char *) &serverAddress, sizeof(serverAddress));
+    serverAddress.sin_family = AF_INET;
 
-    bcopy((char *) server->h_addr, (char *) &server_address.sin_addr.s_addr, server->h_length);
-    server_address.sin_port = htons(port);
+    bcopy((char *) server->h_addr, (char *) &serverAddress.sin_addr.s_addr, server->h_length);
+    serverAddress.sin_port = htons(port);
 
-    if (connect(server_socket, (struct sockaddr *) &server_address, sizeof(server_address)) < 0) 
-        error("Connection failed!");      
+    if (connect(serverSocket, (struct sockaddr *) &serverAddress, sizeof(serverAddress)) < 0) 
+        Error("Connection failed!");      
 }
 
-void wait_for_response(int socket)
+void ReadMessage(int socket, char buffer[], int bufferLength)
 {
-    char buffer[256];
-    bzero(buffer, 256);
+    int result;
+    bzero(buffer, bufferLength);
 
-    read(socket, buffer, 256);
+    result = read(socket, buffer, bufferLength);
 
-    printf("%s\n", buffer);
+    if(result < 0)
+        Error("Failed to read from the socket!\n");
 }
 
-int get_id(int socket)
+void SendMessage(int socket, char message[], int messageLength)
 {
-    char buffer[256];
-    bzero(buffer, 256);
+    int result;
 
-    read(socket, buffer, 256);
+    result = send(socket, message, messageLength, 0);
+    
+    if(result < 0)
+        Error("Failed to read from the socket!\n");
+}
+
+int GetPlayersId(int socket)
+{
+    int bufferLength = 10;
+    char buffer[bufferLength];
+
+    ReadMessage(socket, buffer, bufferLength);
 
     printf("%s\n", buffer);
 
     return std::stoi(buffer);
 }
 
-void print_gui(int server_socket)
+bool IsGameStared(int socket)
 {
-    //wait_for_response(server_socket); //plansza
-    //wait_for_response(server_socket); //hando
+    int bufferLength = 256;
+    char buffer[bufferLength];
 
-    char buffer[2048];
-    bzero(buffer, 2048);    
+    ReadMessage(socket, buffer, bufferLength);
 
-    read(server_socket, buffer, 2048);
-    printf("%s", buffer);
+    if(strstr(buffer, "res:rdy"))
+        return true;
+    else
+        return false;
+}
 
-    bzero(buffer, 2048);    
+void PrintGameStage(int socket)
+{
+    int bufferLength = 256;
+    char buffer[bufferLength];
 
-    read(server_socket, buffer, 2048);
+    ReadMessage(socket, buffer, bufferLength);
+
+    printf("%s starts!\n", buffer);
+}
+
+void PrintTable(int socket)
+{
+    int bufferLength = 2048;
+    char buffer[bufferLength];
+
+    ReadMessage(socket, buffer, bufferLength);
+
     printf("%s", buffer);
 }
 
-void take_action(int socket, int id) 
+void PrintHand(int socket)
 {
-    char buffer[256];
-    char users_choice[10];
-    bzero(buffer, 256);
+    int bufferLength = 2048;
+    char buffer[bufferLength];
 
-    read(socket, buffer, 256);
+    ReadMessage(socket, buffer, bufferLength);
 
-    if(strstr(buffer, std::to_string(id).c_str()))
+    printf("%s", buffer);
+}
+
+int TakeAction(int socket, int id)
+{
+    int bufferLength = 256;
+    int userActionLength = 10;
+    char buffer[bufferLength];
+    char userAction[userActionLength];
+
+    while(1)
     {
-        printf("Your turn! \n");
-        bzero(buffer, 256);
-        read(socket, buffer, 256);
+        bzero(userAction, userActionLength);
 
-        //read users action
-        printf("%s \n", buffer);
-        scanf("%c", users_choice);
+        ReadMessage(socket, buffer, bufferLength);
 
-        send(socket, users_choice, 1, 0);
+        if(strstr(buffer, std::to_string(id).c_str()))
+        {
+            printf("Your turn! \n");
 
-        //wait for servers response
-        bzero(buffer, 256);
-        read(socket, buffer, 256);
-        printf("%s \n", buffer);
+            ReadMessage(socket, buffer ,bufferLength);
+            printf("%s", buffer);
+
+            scanf("%s", userAction);
+
+            SendMessage(socket, userAction, userActionLength);
+
+            if(userAction[0] == '3')
+            {
+                bzero(buffer, bufferLength);
+                ReadMessage(socket, buffer, bufferLength);
+
+
+                if(strstr(buffer, "call"))
+                    continue;
+                else
+                {
+                    printf("How much do you want to call?\n");
+
+                    bzero(userAction, userActionLength);
+                    scanf("%s", userAction);
+
+                    SendMessage(socket, userAction, userActionLength);
+                }
+            }
+        }
+        else if(strstr(buffer, "res:stageended"))
+            break;
+        else if(strstr(buffer, "res:roundended"))
+            return -1;
+        else
+        {
+            ReadMessage(socket, buffer, bufferLength);
+            printf("%s", buffer);
+        }
     }
-    else
-    {
-        bzero(buffer, 256);
-        read(socket, buffer, 256);
-        printf("%s \n", buffer);
-    }
+}
+
+void PrintRoundInfo(int socket)
+{
+    int bufferLength = 256;
+    char buffer[bufferLength];
+
+    ReadMessage(socket, buffer, bufferLength);
+
+    printf("%s\n", buffer);
 }
 
 int main(int argc, char *argv[])
 {
     if(argc < 3)
-        error("Not enough arguments!\n");
+        Error("Not enough arguments!\n");
 
-    int server_socket = create_socket();
+    int serverSocket = CreateSocket();
     int id;
 
-    connect_to_server(server_socket, argv);
+    EstablishConnection(serverSocket, argv);
 
-    id = get_id(server_socket);
-    wait_for_response(server_socket); 
+    id = GetPlayersId(serverSocket);
 
-    while(1)
-    {     
-        print_gui(server_socket);
+    if(IsGameStared(serverSocket))
+    {
+        //round loop
         while(1)
-            take_action(server_socket, id);
-    }
-       
+        {
+            PrintRoundInfo(serverSocket);
+            //stage loop (preflop, flop, turn, river)
+            while(1)
+            {
+                PrintGameStage(serverSocket);
+                PrintTable(serverSocket);
+                PrintHand(serverSocket);
+                if(TakeAction(serverSocket, id) == -1) //TODO: change concept for this...
+                    break;
+            }
+        }
+    }  
+
+    getchar();
 }

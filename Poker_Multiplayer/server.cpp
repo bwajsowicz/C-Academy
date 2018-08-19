@@ -11,10 +11,10 @@
 
 #include <sys/epoll.h>
 
-#define MAX_EVENTS 10
-
 #include <math.h>
 #include <iomanip>
+
+#define MAX_EVENTS 10
 
 enum actions
 {
@@ -41,14 +41,6 @@ std::string drawSign(int amount, char sign)
 	return chars.str();
 }
 
-const int suits_count = 4;
-const int ranks_count = 13;
-const int sleep_time = 2;
-const int player_index = 4;
-
-std::string suits[suits_count];
-std::string ranks[ranks_count];
-
 class Card
 {
 public:
@@ -59,61 +51,23 @@ public:
 class Deck
 {
 
-private:
-	int top;
-	static const int card_tally = 52;
-
-	Card cards[card_tally];
-
 public:
-	Deck()
+	Deck() 
 	{
-		for (int i = 0; i < suits_count; i++)
-		{
-			for (int j = 0; j < ranks_count; j++)
-			{
-				cards[i * ranks_count + j].suit = i;
-				cards[i * ranks_count + j].rank = j;
-			}
-		}
-		suits[0] = "Diamonds";
-		suits[1] = "Spades";
-		suits[2] = "Hearts";
-		suits[3] = "Clubs";
-
-		ranks[0] = "2";
-		ranks[1] = "3";
-		ranks[2] = "4";
-		ranks[3] = "5";
-		ranks[4] = "6";
-		ranks[5] = "7";
-		ranks[6] = "8";
-		ranks[7] = "9";
-		ranks[8] = "T";
-		ranks[9] = "Joker";
-		ranks[10] = "Queen";
-		ranks[11] = "King";
-		ranks[12] = "Ace";
+		initializeDeck();
 	}
 
 	void shuffle()
 	{
-		top = card_tally - 1;
+		top_ = cardTally_ - 1;
 
-		for (int i = 0; i < suits_count; i++)
-		{
-			for (int j = 0; j < ranks_count; j++)
-			{
-				cards[i * ranks_count + j].suit = i;
-				cards[i * ranks_count + j].rank = j;
-			}
-		}
+		initializeDeck();
 
 		int x;
 		Card tempCard;
-		for (int i = 0; i < card_tally; i++)
+		for (int i = 0; i < cardTally_; i++)
 		{
-			x = rand() % card_tally;
+			x = rand() % cardTally_;
 			tempCard = cards[i];
 			cards[i] = cards[x];
 			cards[x] = tempCard;
@@ -122,8 +76,27 @@ public:
 
 	Card hitme()
 	{
-		top--;
-		return cards[top + 1];
+		top_--;
+		return cards[top_ + 1];
+	}
+
+private:
+	int top_;
+	static const int cardTally_ = 52;
+
+	Card cards[cardTally_];
+
+	void initializeDeck()
+	{
+		int nSuits = 4;
+		int nRanks = 13;
+
+		for (int i = 0; i < nSuits; i++)
+			for (int j = 0; j < nRanks; j++)
+			{
+				cards[i * nRanks + j].suit = i;
+				cards[i * nRanks + j].rank = j;
+			}
 	}
 };
 
@@ -134,114 +107,125 @@ public:
 	std::string name;
 	int money;
 	Card cards[2];
-	bool playing;
-	int round;
-	int goodToGo;
+	bool isPlaying;
+	bool isInRound;
+	bool isGoodToGo;
 };
 
 class Connection 
 {
 public:
-    int players_registered;
+    int playersRegistered;
 
     Connection() {}
 
-    void init(int argc, char *argv[], Player players[6]) 
+    void Init(int argc, char *argv[], Player players[6]) 
     {
-        int server_socket = create_socket();
-        int connection_socket;
-        int event_count;
-        struct sockaddr_in client_address;
-        int client_address_length = sizeof(client_address);
+        int serverSocket = CreateSocket();
+        int connectionSocket;
+        int nEvents;
+        struct sockaddr_in clientAddress;
+        int clientAddressLength = sizeof(clientAddress);
 
-        players_registered = 0;
+        playersRegistered = 0;
 
-        bind_socket(server_socket, argc, argv);
-        set_socket_to_listen(server_socket);
+        BindSocket(serverSocket, argc, argv);
+        SetSocketToListen(serverSocket);
 
-        int epollfd = create_epoll();
+        int epollfd = CreateEpoll();
 
         struct epoll_event ev, events[MAX_EVENTS];
 
         ev.events = EPOLLIN;
-        ev.data.fd = server_socket;
+        ev.data.fd = serverSocket;
 
-        if(epoll_ctl(epollfd, EPOLL_CTL_ADD, server_socket, &ev) == -1)
-            error("ERROR, failed to add server_socket to the epoll.");
+        if(epoll_ctl(epollfd, EPOLL_CTL_ADD, serverSocket, &ev) == -1)
+            error("ERROR, failed to add serverSocket to the epoll.");
 
-        while(players_registered < 6)
+        while(playersRegistered < 6)
         {
-            event_count = epoll_wait(epollfd, events, MAX_EVENTS, -1);
+            nEvents = epoll_wait(epollfd, events, MAX_EVENTS, -1);
 
-            if(event_count == -1)
+            if(nEvents == -1)
                 error("ERROR, epoll_wait failed\n");
 
-            for(int i = 0; i < event_count; i++)
+            for(int i = 0; i < nEvents; i++)
             {
-                if(events[i].data.fd == server_socket)
+                if(events[i].data.fd == serverSocket)
                 {
-                    connection_socket = accept(server_socket, (struct sockaddr *) &client_address, (socklen_t *) &client_address_length);
+                    connectionSocket = accept(serverSocket, (struct sockaddr *) &clientAddress, (socklen_t *) &clientAddressLength);
 
-                    if(connection_socket == -1)
+                    if(connectionSocket == -1)
                         perror("ERROR, failed to create connection socket!\n");
 
-                    set_non_blocking(connection_socket);
+                    SetSocketNoBlocking(connectionSocket);
                     ev.events = EPOLLIN | EPOLLET;
-                    ev.data.fd = connection_socket;
+                    ev.data.fd = connectionSocket;
 
-                    if(epoll_ctl(epollfd, EPOLL_CTL_ADD, connection_socket, &ev) == -1)
-                        error("ERROR, failed to add server_socket to the epoll.");
+                    if(epoll_ctl(epollfd, EPOLL_CTL_ADD, connectionSocket, &ev) == -1)
+                        error("ERROR, failed to add serverSocket to the epoll.");
            
-                    register_player(connection_socket, client_address, players);
+                    RegisterPlayer(connectionSocket, clientAddress, players);
                 }
             }
         }
 
-        send_message_to_all("res:RDY", 256, players);
+        SendMessageToAll("res:rdy", 256, players);
     }
 
-    void send_message(int socket, char message[], int length)
+    void SendMessage(int socket, char message[], int length)
     {
         if(write(socket, message, length) < 0)
             error("Failed to send message!");
     }
 
-    void send_message_to_all(char message[], int length, Player players[6]) 
+    void SendMessageToAll(char message[], int length, Player players[6]) 
     {
         for(int i = 0; i < 6; i++)
             write(players[i].fd, message, length);
     }
 
-    int read_message(int socket, int length) 
-    {
+	void SendMessageToAllExceptSomeone(char message[], int length, Player players[6], int playerIndex)
+	{
+		for(int i = 0; i < 6; i++)
+		{	
+			if(i != playerIndex)
+				write(players[i].fd, message, length);
+			else	
+				continue;
+		}
+            
+	}
 
+    int ReadMessage(int socket, int length) 
+    {
         char buffer[10];
         bzero(buffer, 10);
 
-		while(!strstr(buffer, "1"))
+		while(buffer[0] == '\0')
 			read(socket, buffer, 10);
 
 		return std::atoi(buffer);
     }
 
 private:
-    int create_socket()
+    int CreateSocket()
     {
-        int new_socket;
+        int newSocket;
 
-        new_socket = socket(AF_INET, SOCK_STREAM, 0);
+        newSocket = socket(AF_INET, SOCK_STREAM, 0);
 
-        if(new_socket < 0)
+        if(newSocket < 0)
             error("ERROR, can't open new socket!\n");
 
-        return new_socket;
+        return newSocket;
     }
 
-    void bind_socket(int socket, int argc, char *argv[])
+    void BindSocket(int socket, int argc, char *argv[])
     {
 
         int port;
-        struct sockaddr_in server_address;
+        struct sockaddr_in serverAddress;
 
         if(argc < 2)
             error("ERROR, no port provided!\n");
@@ -250,23 +234,23 @@ private:
 
         port = atoi(argv[1]); 
 
-        bzero((char *) &server_address, sizeof(server_address));
+        bzero((char *) &serverAddress, sizeof(serverAddress));
 
-        server_address.sin_family = AF_INET;
-        server_address.sin_port = htons(port); //port as network byte order
-        server_address.sin_addr.s_addr = INADDR_ANY; 
+        serverAddress.sin_family = AF_INET;
+        serverAddress.sin_port = htons(port); //port as network byte order
+        serverAddress.sin_addr.s_addr = INADDR_ANY; 
 
-        if(bind(socket, (struct sockaddr *) &server_address, sizeof(server_address)) < 0)
+        if(bind(socket, (struct sockaddr *) &serverAddress, sizeof(serverAddress)) < 0)
             error("ERROR, failed to bind socket!");
     }
 
-    void set_socket_to_listen(int socket)
+    void SetSocketToListen(int socket)
     {
         if(listen(socket, 10) < 0)
             perror("ERROR, can't set socket to listening\n");
     }
 
-    void set_non_blocking(int socket)
+    void SetSocketNoBlocking(int socket)
     {
         int status = fcntl(socket, F_SETFL, fcntl(socket, F_GETFL, 0) | O_NONBLOCK);
 
@@ -274,7 +258,7 @@ private:
         error("ERROR, calling fcntl.\n");
     }
 
-    int create_epoll()
+    int CreateEpoll()
     {
         int epollfd = epoll_create(MAX_EVENTS);
 
@@ -284,182 +268,218 @@ private:
         return epollfd;
     }
 
-    void register_player(int socket, struct sockaddr_in client_address, Player players[6])
+	//TODO: get players na from client
+    void RegisterPlayer(int socket, struct sockaddr_in clientAddress, Player players[6])
     {
 		std::stringstream id_response;
-        players[players_registered].fd = socket;
-        players[players_registered].name = "XD";
-        std::cout << "Player: " << socket << ", IP: " << client_address.sin_addr.s_addr << " joins!" << std::endl;
+        players[playersRegistered].fd = socket;
+        players[playersRegistered].name = "XD";
+        std::cout << "Player: " << socket << ", IP: " << clientAddress.sin_addr.s_addr << " joins!" << std::endl;
 
-		id_response << players_registered;
+		id_response << playersRegistered;
 
-        send_message(socket, (char *) id_response.str().c_str(), 256);
-        players_registered++;
+        SendMessage(socket, (char *) id_response.str().c_str(), 10);
+        playersRegistered++;
     }
 };
 
 class Poker 
 {
 public:
-    
+	static const std::string suits[4];
+	static const std::string ranks[13];
+
     Poker(int argc, char *argv[]) 
     {
-        connection.init(argc, argv, players);
-        player_index = 4;
-        players_count = 6;
+        connection.Init(argc, argv, players);
+		nPlayers = 6;
 
-        startGame();
+        StartGame();
     }
 
 private:
     Player players[6];
     Connection connection;
 
-    Deck deck1;
+    Deck deck;
 	Card tableCards[5];
 	int pot, action, bet, raise, betOn, winner, maxPoints, roundWinner;
-    int player_with_chip = 0;
 	int handPoints[6];
 	int bestHand[6][3];
 
-    int player_index, players_count;
+    int nPlayers;
 
-    static int compareCards(const void *card1, const void *card2)
+    static int CompareCards(const void *card1, const void *card2)
     {
         return (*(Card *)card1).rank - (*(Card *)card2).rank;
     }
-    void startGame()
+
+	void SetPlayersDefaultValues()
+	{
+		for (int i = 0; i < nPlayers; i++)
+			if (players[i].money < 1)
+			{
+				players[i].isPlaying = 0;
+				players[i].isInRound = 0;
+			}
+
+		for (int i = 0; i < nPlayers; i++)
+		{
+			if (players[i].isPlaying)
+				players[i].isInRound = 1;
+			handPoints[i] = -1;
+		}
+
+		for (int i = 0; i < nPlayers; i++)
+			for (int j = 0; j < 3; j++)
+				bestHand[i][j] = -1;
+	}
+
+	void CheckForGameOver()
+	{
+		for(int i = 0; i < nPlayers; i++)
+            if(players[i].isPlaying == 0)
+          		connection.SendMessage(players[i].fd, "res:OVER", 256);
+	}
+
+	int GetPlayerWithDealerButton()
+	{
+		int playerWithDealerButton;
+		for (int i = playerWithDealerButton; i < nPlayers + playerWithDealerButton; i++)
+		{
+			if (players[i % nPlayers].isPlaying)
+			{
+				playerWithDealerButton = i % nPlayers;
+				std::cout << "** " << players[playerWithDealerButton].name << " Owns chip!" << " **" << std::endl;
+				break;
+			}
+			else
+				continue;
+		}
+
+		return playerWithDealerButton;
+	}
+
+	int GetPlayerPayingBlind(int playerWithDealerButton)
+	{
+		int playerPayingBlind;
+
+		for (int i = playerWithDealerButton + 1; i < nPlayers + playerWithDealerButton; i++)
+		{
+			if (players[i % nPlayers].isPlaying)
+			{
+				playerPayingBlind = i % nPlayers;
+				std::cout << "** " << players[playerPayingBlind].name << " Pays blind!" << " **" << std::endl;
+				break;
+			}
+			else
+				continue;
+		}
+
+		return playerPayingBlind;
+	}
+
+    void StartGame()
 	{
 		int i = 0;
-		int player_paying_blind = 0;
+		int playerPayingBlind;
+		int playerWithDealerButton;
 
-        set_players_money(1000);
+        SetPlayersMoney(1000);
 
-		while (playersLeft() > 1)
+		while (PlayersLeft() > 1)
 		{
-			/* starting default values*/
-			for (int z = 0; z < players_count; z++)
-				if (players[z].money<1)
-				{
-					players[z].playing = 0;
-					players[z].round = 0;
-				}
-			for (int z = 0; z < players_count; z++)
-			{
-				if (players[z].playing)
-					players[z].round = 1;
-				handPoints[z] = -1;
-			}
-			for (int x = 0; x < players_count; x++)
-			{
-				for (int y = 0; y<3; y++)
-				{
-					bestHand[x][y] = -1;
-				}
-			}
 
-			/* checking for game over*/
-            for(int i = 0; i < players_count; i++)
-            {
-                if(players[i].playing == 0)
-                    connection.send_message(players[i].fd, "res:OVER", 256);
-            }
+			SetPlayersDefaultValues();		
+			CheckForGameOver();
 
-			for (int i = player_with_chip; i < players_count + player_with_chip; i++)
-			{
-				if (players[i % players_count].playing)
-				{
-					player_with_chip = i % players_count;
-					std::cout << "** " << players[player_with_chip].name << " Owns chip!" << " **" << std::endl;
-					break;
-				}
-				else
-					continue;
-			}
-
-			for (int i = player_with_chip + 1; i < players_count + player_with_chip; i++)
-			{
-				if (players[i % players_count].playing)
-				{
-					player_paying_blind = i % players_count;
-					std::cout << "** " << players[player_paying_blind].name << " Pays blind!" << " **" << std::endl;
-					break;
-				}
-				else
-					continue;
-			}
-
-			/* paying blind */
-			pot = 20;
-			if (players[player_paying_blind].money >= 20)
-				players[player_paying_blind].money -= 20;
-			else
-				players[player_paying_blind].playing = 0;
+			playerWithDealerButton = GetPlayerWithDealerButton();
+			playerPayingBlind = GetPlayerPayingBlind(playerWithDealerButton);
 
 			//std::cout << "\n\n\n";
 			//std::cout << "\t\t\t\t\t ------ ROUND " << i + 1 << " ------\n\n\n";
-			deck1.shuffle();
+			connection.SendMessageToAll("res:roundstarts", 256, players);
+			deck.shuffle();
 
 			/* pre-flop */
-			deal();
-			send_table();
-			takeBets();
-			if (oneLeft())
+			connection.SendMessageToAll("res:preflop()", 256, players);
+
+			Deal();
+			SendTable(playerWithDealerButton);
+			TakeBets(playerWithDealerButton);
+
+			connection.SendMessageToAll("res:stageended", 256, players);
+
+			if (OneLeft())
 			{
-				winner = getWinner();
+				winner = GetWinner();
 				players[winner].money += pot;
 				std::cout << players[winner].name << " wins $" << pot << "\n\n";
 				//printAllHands(winner);
-				player_with_chip = (player_with_chip + 1) % players_count;
+				playerWithDealerButton = (playerWithDealerButton + 1) % nPlayers;
 				i++;
 				continue;
 			}
 
 			/* flop */
-			flop();
+			connection.SendMessageToAll("res:flop", 256, players);
+
+			Flop();
 			std::cout << std::endl;
-			send_table();
-			takeBets();
-			if (oneLeft())
+			SendTable(playerWithDealerButton);
+			TakeBets(playerWithDealerButton);
+
+			connection.SendMessageToAll("res:stageended", 256, players);
+
+			if (OneLeft())
 			{
-				winner = getWinner();
+				winner = GetWinner();
 				players[winner].money += pot;
 				std::cout << players[winner].name << " wins $" << pot << "\n\n";
 				//printAllHands(winner);
-				player_with_chip = (player_with_chip + 1) % players_count;
+				playerWithDealerButton = (playerWithDealerButton + 1) % nPlayers;
 				i++;
 				continue;
 			}
 
 			/* turn */
-			turn();
+			connection.SendMessageToAll("res:turn", 256, players);
+
+			Turn;
 			std::cout << std::endl;
-			send_table();
-			takeBets();
-			if (oneLeft())
+			SendTable(playerWithDealerButton);
+			TakeBets(playerWithDealerButton);
+
+			connection.SendMessageToAll("res:stageended", 256, players);
+
+			if (OneLeft())
 			{
-				winner = getWinner();
+				winner = GetWinner();
 				players[winner].money += pot;
 				std::cout << players[winner].name << " wins $" << pot << "\n\n";
 				//printAllHands(winner);
-				player_with_chip = (player_with_chip + 1) % players_count;
+				playerWithDealerButton = (playerWithDealerButton + 1) % nPlayers;
 				i++;
 				continue;
 			}
 
-			/* river */
-			river();
-			std::cout << std::endl;
-			send_table();
-			takeBets();
+			/* River */
+			connection.SendMessageToAll("res:River", 256, players);
 
-			evaluateHands();
+			River();
+			std::cout << std::endl;
+			SendTable(playerWithDealerButton);
+			TakeBets(playerWithDealerButton);
+
+			EvaluateHands();
+
+			connection.SendMessageToAll("res:roundended", 256, players);
 
 			/* find and declare round winner */
 			maxPoints = 0;
-			for (int q = 0; q < players_count; q++)
+			for (int q = 0; q < nPlayers; q++)
 			{
-				if (players[q].round)
+				if (players[q].isInRound)
 				{
 					if (handPoints[q] > maxPoints)
 					{
@@ -495,76 +515,78 @@ private:
 
 			players[roundWinner].money += pot;
 
-			player_with_chip = (player_with_chip + 1) % players_count;
+			playerWithDealerButton = (playerWithDealerButton + 1) % nPlayers;
 			i++;
 		}
     }
 
-    void set_players_money(int start_value)
+    void SetPlayersMoney(int start_value)
 	{
 		for (int i = 0; i < 6; i++)
 		{
 			players[i].money = start_value;
-			players[i].playing = true;
+			players[i].isPlaying = true;
 		}
     }
 
-    int playersLeft()
+    int PlayersLeft()
 	{
-		int count = 0;
-		for (int i = 0; i < players_count; i++)
+		int nPlayersLeft = 0;
+		for (int i = 0; i < nPlayers; i++)
 			if (players[i].money > 0)
-				count++;
-		return count;
+				nPlayersLeft++;
+
+		return nPlayersLeft;
 	}
 
-    void deal()
+    void Deal()
 	{
-		for (int i = 0; i < players_count; i++)
+		for (int i = 0; i < nPlayers; i++)
 		{
 			for (int j = 0; j < 2; j++)
 			{
-				if (players[i].playing)
-					players[i].cards[j] = deck1.hitme();
+				if (players[i].isPlaying)
+					players[i].cards[j] = deck.hitme();
 			}
 		}
 		for (int i = 0; i < 5; i++)
 			tableCards[i].rank = -1;
 	}
 
-	void flop()
+	void Flop()
 	{
 		for (int i = 0; i < 3; i++)
-			tableCards[i] = deck1.hitme();
+			tableCards[i] = deck.hitme();
 	}
 
-	void turn()
+	void Turn()
 	{
-		tableCards[3] = deck1.hitme();
+		tableCards[3] = deck.hitme();
 	}
 
-	void river()
+	void River()
 	{
-		tableCards[4] = deck1.hitme();
+		tableCards[4] = deck.hitme();
 	}
 
-    int getWinner()
+    int GetWinner()
 	{
 		int winner;
-		for (int k = 0; k < players_count; k++)
-			if (players[k].round)
-				winner = k;
+		for (int i = 0; i < nPlayers; i++)
+			if (players[i].isInRound)
+				winner = i;
+
 		return winner;
 	}
 
-    void evaluateHands()
+    void EvaluateHands()
 	{
 		int stack[10], k;
 		int currentPoints;
 
-		for (int q = 0; q < players_count; q++)
+		for (int i = 0; i < nPlayers; i++)
 		{
-			if (players[q].round)
+			if (players[i].isInRound)
 			{
 				stack[0] = -1; /* -1 is not considered as part of the set */
 				k = 0;
@@ -586,23 +608,23 @@ private:
 
 					if (k == 3)
 					{
-						currentPoints = tryHand(stack, q);
-						if (currentPoints > handPoints[q])
+						currentPoints = TryHand(stack, i);
+						if (currentPoints > handPoints[i])
 						{
-							handPoints[q] = currentPoints;
+							handPoints[i] = currentPoints;
 							for (int x = 0; x < 3; x++)
-								bestHand[q][x] = stack[x + 1];
+								bestHand[i][x] = stack[x + 1];
 						}
 					}
 				}
 
 			}
 		}
-	} /*end of evaluateHands() */
+	} 
 
-    int getScore(Card hand[])
+    int GetScore(Card hand[])
 	{
-		qsort(hand, 5, sizeof(Card), compareCards);
+		qsort(hand, 5, sizeof(Card), CompareCards);
 		int straight, flush, three, four, full, pairs, high;
 		int k;
 
@@ -696,7 +718,7 @@ private:
 			return hand[4].rank;
 	}
 
-	int tryHand(int array[], int player)
+	int TryHand(int array[], int player)
 	{
 		Card hand[5];
 
@@ -707,75 +729,75 @@ private:
 		for (int i = 0; i < 2; i++)
 			hand[i + 3] = players[player].cards[i];
 
-		return getScore(hand);
-
+		return GetScore(hand);
 	}
 
-    bool oneLeft()
+    bool OneLeft()
 	{
-		int count = 0;
-		for (int k = 0; k < players_count; k++)
-			if (players[k].round)
-				count++;
-		if (count == 1)
+		int nPlayersLeft = 0;
+		for (int i = 0; i < nPlayers; i++)
+			if (players[i].isInRound)
+				nPlayersLeft++;
+
+		if (nPlayersLeft == 1)
 			return true;
 		else
 			return false;
 	}
 
-    bool playersToBet()
+    bool PlayersToBet()
 	{
-		for (int i = 0; i < players_count; i++)
-			if (players[i].round == 1 && players[i].goodToGo == 0)
+		for (int i = 0; i < nPlayers; i++)
+			if (players[i].isInRound == 1 && players[i].isGoodToGo == 0)
 				return true;
 
 		return false;
 	}
 
-    void takeBets()
+    void TakeBets(int playerWithDealerButton)
 	{
 		using std::cout;
 		using std::cin;
 		using std::endl;
 
-		std::stringstream current_player;
-		std::stringstream players_action;
-		std::stringstream round_info;
+		std::stringstream currentPlayer;
+		std::stringstream playerActionOptions;
+		std::stringstream playerAction;
 
 		betOn = 0;
-		for (int k = 0; k < players_count; k++)
-			players[k].goodToGo = 0;
+		for (int k = 0; k < nPlayers; k++)
+			players[k].isGoodToGo = 0;
 
 
-		for (int k = player_with_chip; k < player_with_chip + players_count; k++)
+		for (int k = playerWithDealerButton; k < playerWithDealerButton + nPlayers; k++)
 		{
-			current_player.str(std::string());
-			current_player.clear();
+			currentPlayer.str(std::string());
+			currentPlayer.clear();
 
-			players_action.str(std::string());
-			players_action.clear();
+			playerActionOptions.str(std::string());
+			playerActionOptions.clear();
 
-			round_info.str(std::string());
-			round_info.clear();
+			playerAction.str(std::string());
+			playerAction.clear();
 
-			current_player << "res:" << k << "goes";
+			currentPlayer << "res:" << k << "goes";
 
-			connection.send_message_to_all((char *) current_player.str().c_str(), 256, players);
+			connection.SendMessageToAll((char *) currentPlayer.str().c_str(), 256, players);
 
 				if (betOn)
 				{
 					if (players[k].money >= betOn)
 					{
-						players_action << "\t\t\t\t\tYour action: (1) FOLD (3) BET/CALL (4) RRRRRAISE? ";
-						connection.send_message(players[k].fd, (char* )players_action.str().c_str(), 256);
+						playerActionOptions << "\t\t\t\t\tYour action: (1) FOLD (3) BET/CALL (4) RRRRRAISE? ";
+						connection.SendMessage(players[k].fd, (char* )playerActionOptions.str().c_str(), 256);
 					}
 					else
 					{
-						players_action << "\t\t\t\t\tYour action: (1) FOLD";
-						connection.send_message(players[k].fd, (char* )players_action.str().c_str(), 256);
+						playerActionOptions << "\t\t\t\t\tYour action: (1) FOLD";
+						connection.SendMessage(players[k].fd, (char* )playerActionOptions.str().c_str(), 256);
 					}
 					
-					action = connection.read_message(players[k].fd, 1);
+					action = connection.ReadMessage(players[k].fd, 10);
 
 					if (players[k].money >= betOn)
 					{
@@ -800,16 +822,16 @@ private:
 				{
 					if (players[k].money > 0)
 					{
-						players_action << "\t\t\t\t\tYour action: (1) FOLD (2) CHECK (3) BET/CALL ";
-						connection.send_message(players[k].fd, (char* )players_action.str().c_str(), 256);
+						playerActionOptions << "\t\t\t\t\tYour action: (1) FOLD (2) CHECK (3) BET/CALL ";
+						connection.SendMessage(players[k].fd, (char* )playerActionOptions.str().c_str(), 256);
 					}
 					else
 					{
-						players_action << "\t\t\t\t\tYour action: (1) FOLD (2) CHECK ";
-						connection.send_message(players[k].fd, (char* )players_action.str().c_str(), 256);
+						playerActionOptions << "\t\t\t\t\tYour action: (1) FOLD (2) CHECK ";
+						connection.SendMessage(players[k].fd, (char* )playerActionOptions.str().c_str(), 256);
 					}
 						
-					action = connection.read_message(players[k].fd, 1);
+					action = connection.ReadMessage(players[k].fd, 1);
 
 
 					if (players[k].money > 0)
@@ -836,32 +858,39 @@ private:
 
 				if (action == FOLD)
 				{
-					players[k].round = 0;
-					round_info << "\t- " << players[k].name << " folds...\n";
-					connection.send_message_to_all((char *) round_info.str().c_str(), 256, players);
+					players[k].isInRound = 0;
+					playerAction << "\t- " << players[k].name << " folds...\n";
+					connection.SendMessageToAllExceptSomeone((char *) playerAction.str().c_str(), 256, players, k);
 				}
 				else if (action == CHECK)
 				{
-					round_info << "\t+ " << players[k].name << " checks.\n";
-					connection.send_message_to_all((char *) round_info.str().c_str(), 256, players);
+					playerAction << "\t+ " << players[k].name << " checks.\n";
+					connection.SendMessageToAllExceptSomeone((char *) playerAction.str().c_str(), 256, players, k);
 					continue;
 				}
 				else if (action == BET_or_CALL)
 				{
 					if (betOn)
 					{
+						playerActionOptions.str(std::string());
+						playerActionOptions.clear();
+						playerActionOptions << "call";
+						connection.SendMessage(players[k].fd, (char *) playerActionOptions.str().c_str(), 256);
+						
 						pot += betOn;
 						players[k].money -= betOn;
-						players[k].goodToGo = 1;
-						round_info << "\t+ " << players[k].name << " bets " << betOn << "$\n";
-						connection.send_message_to_all((char *) round_info.str().c_str(), 256, players);
+						players[k].isGoodToGo = 1;
+						playerAction << "\t+ " << players[k].name << " bets " << betOn << "$\n";
+						connection.SendMessageToAllExceptSomeone((char *) playerAction.str().c_str(), 256, players, k);
 					}
 					else
 					{
-						players_action << "How much do you want to bet: ";
-						connection.send_message(players[k].fd, (char *) players_action.str().c_str(), 256);
+						playerActionOptions.str(std::string());
+						playerActionOptions.clear();
+						playerActionOptions << "bet";
+						connection.SendMessage(players[k].fd, (char *) playerActionOptions.str().c_str(), 256);
 
-						bet = connection.read_message(players[k].fd, 1);
+						bet = connection.ReadMessage(players[k].fd, 1);
 
 						while (bet > players[k].money || bet < 1)
 						{
@@ -873,16 +902,16 @@ private:
 						pot += bet;
 						players[k].money -= bet;
 						betOn = bet;
-						players[k].goodToGo = 1;
+						players[k].isGoodToGo = 1;
 
-						round_info << "\t+ " << players[k].name << " bets " << bet << "$\n";
-						connection.send_message_to_all((char *) round_info.str().c_str(), 256, players);
+						playerAction << "\t+ " << players[k].name << " bets " << bet << "$\n";
+						connection.SendMessageToAllExceptSomeone((char *) playerAction.str().c_str(), 256, players, k);
 					}
 				}
 				else
 				{
-					players_action << "How much do you want to raise: ";
-					raise = connection.read_message(players[k].fd, 1);
+					playerActionOptions << "How much do you want to raise: ";
+					raise = connection.ReadMessage(players[k].fd, 1);
 					while (raise > players[k].money - betOn || raise <= betOn || raise <= 0)
 					{
 						cout << "Invalid number to raise." << endl;
@@ -894,19 +923,22 @@ private:
 					pot += raise;
 					betOn += raise;
 					players[k].money -= betOn;
-					players[k].goodToGo = 1;
+					players[k].isGoodToGo = 1;
 
-					round_info << "\t+ " << players[k].name << " r-r-r-r-raises! " << raise << "$\n";
-					connection.send_message_to_all((char *) round_info.str().c_str(), 256, players);
+					playerAction << "\t+ " << players[k].name << " r-r-r-r-raises! " << raise << "$\n";
+					connection.SendMessageToAllExceptSomeone((char *) playerAction.str().c_str(), 256, players, k);
 				}			
 
-		if (betOn && playersToBet())
+		
+		}
+
+		if (betOn && PlayersToBet())
 		{
-			for (int k = player_with_chip + 1; k < player_with_chip + 7; k++)
+			for (int k = playerWithDealerButton + 1; k < playerWithDealerButton + 7; k++)
 			{
-				if (k % players_count == 4)
+				if (k % nPlayers == 4)
 				{
-					if (players[k].round && players[k].goodToGo == 0)
+					if (players[k].isInRound && players[k].isGoodToGo == 0)
 					{
 						cout << "\t\t\t\t\tYour action: (1) FOLD (3) BET/CALL ";
 						cin >> action;
@@ -920,13 +952,13 @@ private:
 						if (action == FOLD)
 						{
 							cout << "\t- " << players[k].name << " folds...\n";
-							players[k].round = 0;
+							players[k].isInRound = 0;
 						}
 						else
 						{
 							pot += betOn;
 							players[k].money -= betOn;
-							players[k].goodToGo = 1;
+							players[k].isGoodToGo = 1;
 
 							cout << "\t+ " << players[k].name << " bets " << betOn << "$\n";
 						}
@@ -935,28 +967,27 @@ private:
 
 				else
 				{
-					if (players[k % players_count].round == 0 || players[k % players_count].goodToGo == 1)
+					if (players[k % nPlayers].isInRound == 0 || players[k % nPlayers].isGoodToGo == 1)
 						continue;
 					action = rand() % 2;
-					if (action == 0 || players[k % players_count].money < betOn)
+					if (action == 0 || players[k % nPlayers].money < betOn)
 					{
-						players[k % players_count].round = 0;
-						cout << "\t- " << players[k % players_count].name << " folds..." << endl;
+						players[k % nPlayers].isInRound = 0;
+						cout << "\t- " << players[k % nPlayers].name << " folds..." << endl;
 					}
 					else
 					{
 						pot += betOn;
-						players[k % players_count].money -= betOn;
-						cout << "\t++ " << players[k % players_count].name << " calls!" << endl;
-						players[k % players_count].goodToGo = 1;
+						players[k % nPlayers].money -= betOn;
+						cout << "\t++ " << players[k % nPlayers].name << " calls!" << endl;
+						players[k % nPlayers].isGoodToGo = 1;
 					}
 				}
 			}
 		}
-		}
 	}
 
-	std::stringstream displayCards(Card cards[], int size)
+	std::stringstream DisplayCards(Card cards[], int size)
 	{
 		using namespace std;
 		int numberOfSpaces = 0;
@@ -1012,7 +1043,7 @@ private:
 		return display;
 	}
 
-	void send_table()
+	void SendTable(int playerWithDealerButton)
 	{
 		using std::cout;
 		using std::endl;
@@ -1020,13 +1051,13 @@ private:
 
 		std::stringstream gui;
 
-		int upperHalfOfPlayers = ceil((float)players_count / 2);
+		int upperHalfOfPlayers = ceil((float)nPlayers / 2);
 
 		gui << "---------------------------------------------------------------------------------------------" << endl;
 		//--PLAYERS NAMES 1-3--
 		gui << "     ";
 		for (int i = 0; i < upperHalfOfPlayers; i++)
-			gui << std::left << setw(16) << ((players[i].playing) ? (players[i].name) : "      ");
+			gui << std::left << setw(16) << ((players[i].isPlaying) ? (players[i].name) : "      ");
 
 		gui << endl;
 		//-----------------
@@ -1034,7 +1065,7 @@ private:
 		//--PLAYERS MONEY 1-3--
 		gui << "     ";
 		for (int i = 0; i < upperHalfOfPlayers; i++)
-			gui << std::left << "$" << setw(15) << ((players[i].playing) ? (players[i].money) : 0);
+			gui << std::left << "$" << setw(15) << ((players[i].isPlaying) ? (players[i].money) : 0);
 		gui << endl;
 		//-----------------
 
@@ -1049,12 +1080,12 @@ private:
 		//--MOVING CHIP--
 		gui << "   /";
 		for (int i = 0; i < upperHalfOfPlayers; i++)
-			gui << ((player_with_chip == i) ? " @              " : "                ");
+			gui << ((playerWithDealerButton == i) ? " @              " : "                ");
 		gui << "\\" << endl;
 		//---------------
 
 		//----CARDS----
-		gui << displayCards(tableCards, 5).str();
+		gui << DisplayCards(tableCards, 5).str();
 		//--------------
 
 		//--POT--
@@ -1064,8 +1095,8 @@ private:
 
 		//--MOVING CHIP--
 		gui << "   \\";
-		for (int i = players_count - 1; i > upperHalfOfPlayers - 1; i--)
-			gui << ((player_with_chip == i) ? " @              " : "                ");
+		for (int i = nPlayers - 1; i > upperHalfOfPlayers - 1; i--)
+			gui << ((playerWithDealerButton == i) ? " @              " : "                ");
 		gui << "/" << endl;
 		//--------------
 
@@ -1076,38 +1107,40 @@ private:
 
 		//--PLAYER NAMES4-6--
 		gui << "     ";
-		for (int i = players_count - 1; i > upperHalfOfPlayers - 1; i--)
-			gui << std::left << setw(16) << ((players[i].playing) ? (players[i].name) : "      ");
+		for (int i = nPlayers - 1; i > upperHalfOfPlayers - 1; i--)
+			gui << std::left << setw(16) << ((players[i].isPlaying) ? (players[i].name) : "      ");
 
 		gui << endl;
 		//-----------------
 
 		//--PLAYERS MONEY 4-6--
 		gui << "     ";
-		for (int i = players_count - 1; i > upperHalfOfPlayers - 1; i--)
-			gui << std::left << "$" << setw(15) << ((players[i].playing) ? (players[i].money) : 0);
+		for (int i = nPlayers - 1; i > upperHalfOfPlayers - 1; i--)
+			gui << std::left << "$" << setw(15) << ((players[i].isPlaying) ? (players[i].money) : 0);
 
 		gui << endl << endl;
 		//-----------------
 
-		connection.send_message_to_all((char *)gui.str().c_str(), 2048, players);
+		connection.SendMessageToAll((char *)gui.str().c_str(), 2048, players);
 
 
 		std::stringstream players_hand;
 
-		for(int i = 0; i < players_count; i++)
+		for(int i = 0; i < nPlayers; i++)
 		{
 			players_hand.str(std::string());
 			players_hand.clear();
-			if(players[i].round)
+			if(players[i].isPlaying)
 			{
-				players_hand <<  " Your hand:" << endl << displayCards(players[i].cards, 2).str() << endl;
-				connection.send_message(players[i].fd, (char *) players_hand.str().c_str(), 2048);
+				players_hand <<  " Your hand:" << endl << DisplayCards(players[i].cards, 2).str() << endl;
+				connection.SendMessage(players[i].fd, (char *) players_hand.str().c_str(), 2048);
 			}
 		}
 	}
 };
 
+const std::string Poker::suits[] = {"Diamonds", "Spades", "Hearts", "Clubs"};
+const std::string Poker::ranks[] = {"2", "3", "4", "5", "6", "7", "8", "9", "Ten", "Joker", "Queen", "King", "Ace"};
 
 int main(int argc, char *argv[])
 {
